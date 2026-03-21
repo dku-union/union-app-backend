@@ -35,3 +35,8 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Secrets and Logs ###
+.env
+src/main/resources/application-local.yml
+*.log
