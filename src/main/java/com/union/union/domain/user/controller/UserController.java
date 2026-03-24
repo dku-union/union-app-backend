@@ -3,11 +3,11 @@ package com.union.union.domain.user.controller;
 import com.union.union.domain.user.entity.User;
 import com.union.union.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/users")
@@ -16,14 +16,8 @@ public class UserController {
 
     private final UserService userService;
 
-    @PostMapping
-    public ResponseEntity<UserResponse> createUser(@RequestBody UserCreateRequest request) {
-        User user = userService.createUser(request.name(), request.email());
-        return ResponseEntity.status(HttpStatus.CREATED).body(UserResponse.from(user));
-    }
-
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponse> getUser(@PathVariable Long id) {
+    public ResponseEntity<UserResponse> getUser(@PathVariable UUID id) {
         User user = userService.getUser(id);
         return ResponseEntity.ok(UserResponse.from(user));
     }
@@ -37,17 +31,17 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
 
-    // --- DTO ---
-    public record UserCreateRequest(String name, String email) {}
-
-    public record UserResponse(Long id, String name, String email) {
+    public record UserResponse(UUID id, String email, String nickname, String universityName, boolean isVerified) {
         public static UserResponse from(User user) {
-            return new UserResponse(user.getId(), user.getName(), user.getEmail());
+            return new UserResponse(
+                    user.getId(), user.getEmail(), user.getNickname(),
+                    user.getUniversityName(), user.isVerified()
+            );
         }
     }
 }

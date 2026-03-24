@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -15,17 +16,7 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    @Transactional
-    public User createUser(String name, String email) {
-        // 실제 실무에서는 이메일 중복 체크 등의 비즈니스 로직이 추가됩니다.
-        User user = User.builder()
-                .name(name)
-                .email(email)
-                .build();
-        return userRepository.save(user);
-    }
-
-    public User getUser(Long id) {
+    public User getUser(UUID id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다. id: " + id));
     }
@@ -35,7 +26,7 @@ public class UserService {
     }
 
     @Transactional
-    public void deleteUser(Long id) {
+    public void deleteUser(UUID id) {
         User user = getUser(id);
         userRepository.delete(user);
     }
