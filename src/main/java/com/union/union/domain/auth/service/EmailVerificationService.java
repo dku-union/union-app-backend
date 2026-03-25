@@ -44,6 +44,7 @@ public class EmailVerificationService {
         }
 
         verificationStore.delete(email);
+        verificationStore.markAsVerified(email);
         log.info("이메일 인증 성공. email: {}", email);
         return true;
     }
