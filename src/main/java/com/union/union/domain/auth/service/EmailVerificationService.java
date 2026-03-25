@@ -22,8 +22,8 @@ public class EmailVerificationService {
     /**
      * 인증 코드 생성 및 발송
      */
-    public void sendCode(String email) {
-        emailDomainValidationService.validate(email);
+    public void sendCode(String email, Long universityId) {
+        emailDomainValidationService.validate(email, universityId);
 
         String code = generateCode();
         verificationStore.save(email, code, System.currentTimeMillis() + EXPIRE_TIME);

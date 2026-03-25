@@ -22,7 +22,7 @@ public class EmailVerificationController {
      */
     @PostMapping("/send")
     public ResponseEntity<String> sendCode(@RequestBody EmailSendRequestDto request) {
-        verificationService.sendCode(request.email());
+        verificationService.sendCode(request.email(), request.universityId());
         return ResponseEntity.ok("인증 코드가 발송되었습니다.");
     }
 
