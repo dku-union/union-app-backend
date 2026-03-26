@@ -48,6 +48,14 @@ spring:
   cloud:
     gcp:
       storage:
-        bucket: ${GCS_BUCKET_NAME}
+        bucket: ${GCS_BUCKET_NAME:union-app-miniapps}
+
 
 jwt:
+  secret: ${JWT_SECRET:union-super-app-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256}
+  access-token-expiration: 1800000     # 30분
+  refresh-token-expiration: 1209600000  # 14일
+
+careernet:
+  api:
+    key: ${CAREERNET_API_KEY}
