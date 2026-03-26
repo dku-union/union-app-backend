@@ -2,6 +2,11 @@ spring:
   profiles:
     active: local
 
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}
@@ -48,3 +53,9 @@ jwt:
 careernet:
   api:
     key: ${CAREERNET_API_KEY}
+
+spring:
+  cloud:
+    gcp:
+      storage:
+        bucket: ${GCS_BUCKET_NAME}

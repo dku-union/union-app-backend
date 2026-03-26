@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -20,6 +21,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -42,9 +44,20 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers("/auth/email/**").permitAll()
                 .requestMatchers("/api/v1/universities/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/apps/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/apps/**", "/mini-apps").permitAll()
+                
+                // MiniApp endpoints
+                .requestMatchers(HttpMethod.GET, "/mini-apps/*/launch").authenticated()
+                .requestMatchers(HttpMethod.POST, "/mini-apps").hasRole("PUBLISHER")
+                .requestMatchers(HttpMethod.PATCH, "/mini-apps/*/approve").hasRole("ADMIN")
+                
+                // Publisher endpoints
+                .requestMatchers(HttpMethod.POST, "/publishers/apply").authenticated()
+                .requestMatchers(HttpMethod.PATCH, "/publishers/*/approve").hasRole("ADMIN")
+                
                 // Admin endpoints
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                
                 // All other endpoints require authentication
                 .anyRequest().authenticated()
             )

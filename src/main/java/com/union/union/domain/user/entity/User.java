@@ -1,6 +1,7 @@
 package com.union.union.domain.user.entity;
 
 import com.union.union.global.common.entity.BaseEntity;
+import com.union.union.domain.publisher.entity.Publisher;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -43,6 +44,9 @@ public class User extends BaseEntity {
     @Column(nullable = false, length = 20)
     private Role role;
 
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Publisher publisher;
+
     @Builder
     public User(String email, String password, String nickname, String universityName) {
         this.email = email;
@@ -71,8 +75,12 @@ public class User extends BaseEntity {
         this.userStatus = UserStatus.WITHDRAWN;
     }
 
+    public void updateRole(Role role) {
+        this.role = role;
+    }
+
     public enum Role {
-        ROLE_USER, ROLE_TESTER, ROLE_ADMIN
+        ROLE_USER, ROLE_TESTER, ROLE_ADMIN, ROLE_PUBLISHER
     }
 
     public enum UserStatus {
