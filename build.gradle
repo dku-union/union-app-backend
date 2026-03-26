@@ -36,7 +36,7 @@ dependencies {
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 
 	// GCS
-	implementation 'com.google.cloud:google-cloud-storage'
+	implementation 'com.google.cloud:spring-cloud-gcp-starter-storage:5.1.2'
 
 	// Redis
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'

@@ -45,17 +45,9 @@ spring:
         highlight_sql: true
         default_batch_fetch_size: 1000
 
-jwt:
-  secret: ${JWT_SECRET:union-super-app-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256}
-  access-token-expiration: 1800000     # 30분
-  refresh-token-expiration: 1209600000  # 14일
-
-careernet:
-  api:
-    key: ${CAREERNET_API_KEY}
-
-spring:
   cloud:
     gcp:
       storage:
         bucket: ${GCS_BUCKET_NAME}
+
+jwt:
