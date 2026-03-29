@@ -8,6 +8,7 @@ import com.union.union.domain.user.entity.User;
 import com.union.union.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,30 +22,32 @@ public class PublisherService {
 
     private final PublisherRepository publisherRepository;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public void apply(PublisherApplyRequestDto request, UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
 
-        if (publisherRepository.existsByUserId(userId)) {
+        if (publisherRepository.existsByPublisherId(userId)) {
             throw new IllegalArgumentException("이미 퍼블리셔 신청을 하셨거나 프로필이 존재합니다");
         }
 
         Publisher publisher = Publisher.builder()
-                .user(user)
+                .publisherId(userId)
                 .name(request.name())
+                .email(request.contactEmail())
+                .password(passwordEncoder.encode(user.getPassword()))
                 .description(request.description())
-                .contactEmail(request.contactEmail())
-                .status(PublisherStatus.PENDING)
+                .pubstatus(PublisherStatus.PENDING)
+                .role(user.getRole().name())
                 .build();
 
         publisherRepository.save(publisher);
-        
-        // 퍼블리셔 신청과 동시에 역할 변경 (요구사항에 따라)
+
         user.updateRole(User.Role.ROLE_PUBLISHER);
-        
-        log.info("퍼블리셔 신청 완료 및 역할 변경. userId={}, publisherName={}", userId, publisher.getName());
+
+        log.info("퍼블리셔 신청 완료. userId={}, publisherName={}", userId, publisher.getName());
     }
 
     @Transactional

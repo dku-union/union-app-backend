@@ -1,51 +1,67 @@
 package com.union.union.domain.publisher.entity;
 
-import com.union.union.domain.user.entity.User;
-import com.union.union.global.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "publishers")
-public class Publisher extends BaseEntity {
+@EntityListeners(AuditingEntityListener.class)
+public class Publisher {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
-    private User user;
+    @Column(name = "publisher_id", nullable = false, unique = true, columnDefinition = "uuid")
+    private UUID publisherId;
 
     @Column(nullable = false, length = 100)
     private String name;
 
+    @Column(nullable = false, length = 100)
+    private String email;
+
+    @Column(nullable = false)
+    private String password;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(nullable = false, length = 100)
-    private String contactEmail;
-
     @Enumerated(EnumType.STRING)
+    @Column(name = "pubstatus", nullable = false, length = 20)
+    private PublisherStatus pubstatus;
+
     @Column(nullable = false, length = 20)
-    private PublisherStatus status;
+    private String role;
+
+    @CreatedDate
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
 
     @Builder
-    public Publisher(User user, String name, String description, String contactEmail, PublisherStatus status) {
-        this.user = user;
+    public Publisher(UUID publisherId, String name, String email, String password,
+                     String description, PublisherStatus pubstatus, String role) {
+        this.publisherId = publisherId;
         this.name = name;
+        this.email = email;
+        this.password = password;
         this.description = description;
-        this.contactEmail = contactEmail;
-        this.status = status != null ? status : PublisherStatus.PENDING;
+        this.pubstatus = pubstatus != null ? pubstatus : PublisherStatus.PENDING;
+        this.role = role != null ? role : "ROLE_USER";
     }
 
     public void approve() {
-        this.status = PublisherStatus.APPROVED;
+        this.pubstatus = PublisherStatus.ACTIVE;
     }
 
     public void reject() {
-        this.status = PublisherStatus.REJECTED;
+        this.pubstatus = PublisherStatus.REJECTED;
     }
 }

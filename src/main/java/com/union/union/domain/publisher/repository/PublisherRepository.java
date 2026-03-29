@@ -9,6 +9,6 @@ import java.util.UUID;
 
 @Repository
 public interface PublisherRepository extends JpaRepository<Publisher, Long> {
-    Optional<Publisher> findByUserId(UUID userId);
-    boolean existsByUserId(UUID userId);
+    Optional<Publisher> findByPublisherId(UUID publisherId);
+    boolean existsByPublisherId(UUID publisherId);
 }
