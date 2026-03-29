@@ -8,7 +8,7 @@ import lombok.*;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "publisher")
+@Table(name = "publishers")
 public class Publisher extends BaseEntity {
 
     @Id

@@ -9,7 +9,7 @@ import lombok.*;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "mini_app")
+@Table(name = "mini_apps")
 public class MiniApp extends BaseEntity {
 
     @Id
