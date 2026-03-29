@@ -58,3 +58,8 @@ jwt:
 careernet:
   api:
     key: ${CAREERNET_API_KEY}
+
+cdn:
+  base-url: ${CDN_BASE_URL}
+  key-name: ${CDN_KEY_NAME}
+  key-value: ${CDN_KEY_VALUE}
