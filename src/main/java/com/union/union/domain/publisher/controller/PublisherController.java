@@ -42,18 +42,15 @@ public class PublisherController {
     }
 
     @PostMapping("/apply")
-    public ResponseEntity<String> apply(
-            @Valid @RequestBody PublisherApplyRequestDto request,
-            @AuthenticationPrincipal JwtUserPrincipal principal
-    ) {
-        publisherService.apply(request, principal.userId());
-        return ResponseEntity.ok("퍼블리셔 신청이 완료되었으며, 역할이 PUBLISHER로 변경되었습니다.");
+    public ResponseEntity<Void> apply(@Valid @RequestBody PublisherApplyRequestDto request) {
+        publisherService.apply(request);
+        return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/{id}/approve")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> approve(@PathVariable Long id) {
+    public ResponseEntity<Void> approve(@PathVariable UUID id) {
         publisherService.approve(id);
-        return ResponseEntity.ok("퍼블리셔 승인이 완료되었습니다.");
+        return ResponseEntity.ok().build();
     }
 }
