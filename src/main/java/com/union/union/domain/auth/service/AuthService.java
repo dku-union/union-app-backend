@@ -3,6 +3,9 @@ package com.union.union.domain.auth.service;
 import com.union.union.domain.auth.dto.*;
 import com.union.union.domain.auth.entity.RefreshToken;
 import com.union.union.domain.auth.repository.RefreshTokenRepository;
+import com.union.union.domain.auth.store.EmailVerificationStore;
+import com.union.union.domain.university.entity.UniversityDomain;
+import com.union.union.domain.university.repository.UniversityDomainRepository;
 import com.union.union.domain.user.entity.User;
 import com.union.union.domain.user.repository.UserRepository;
 import com.union.union.global.security.jwt.JwtProvider;
@@ -25,22 +28,36 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtProvider jwtProvider;
     private final PasswordEncoder passwordEncoder;
+    private final EmailVerificationStore verificationStore;
+    private final UniversityDomainRepository universityDomainRepository;
 
     @Transactional
     public TokenResponseDto signUp(SignUpRequestDto request) {
+        // 1. 이메일 중복 확인
         if (userRepository.existsByEmail(request.email())) {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다");
         }
+
+        // 2. 이메일 인증 여부 확인
+        if (!verificationStore.isVerified(request.email())) {
+            throw new IllegalArgumentException("이메일 인증이 완료되지 않았습니다");
+        }
+
+        // 3. 학교 정보 조회
+        UniversityDomain university = universityDomainRepository.findById(request.universityId())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 대학교입니다"));
 
         User user = User.builder()
                 .email(request.email())
                 .password(passwordEncoder.encode(request.password()))
                 .nickname(request.nickname())
-                .universityName(request.universityName())
+                .universityName(university.getUniversityName())
                 .build();
+
+        user.verify();
         userRepository.save(user);
 
-        log.info("회원가입 완료. userId={}, email={}", user.getId(), user.getEmail());
+        log.info("회원가입 완료. userId={}", user.getId());
         return issueTokens(user);
     }
 

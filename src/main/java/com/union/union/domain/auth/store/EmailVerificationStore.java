@@ -23,4 +23,17 @@ public interface EmailVerificationStore {
      * @param email 이메일
      */
     void delete(String email);
+
+    /**
+     * 이메일을 인증 완료 상태로 표시
+     * @param email 이메일
+     */
+    void markAsVerified(String email);
+
+    /**
+     * 이메일이 인증 완료된 상태인지 확인
+     * @param email 이메일
+     * @return 인증 완료 여부
+     */
+    boolean isVerified(String email);
 }

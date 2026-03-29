@@ -2,6 +2,11 @@ spring:
   profiles:
     active: local
 
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}
@@ -39,6 +44,11 @@ spring:
         format_sql: true
         highlight_sql: true
         default_batch_fetch_size: 1000
+
+  cloud:
+    gcp:
+      storage:
+        bucket: ${GCS_BUCKET_NAME:union-app-miniapps}
 
 jwt:
   secret: ${JWT_SECRET:union-super-app-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256}

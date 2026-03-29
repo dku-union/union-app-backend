@@ -15,15 +15,15 @@ public class EmailVerificationService {
 
     private final EmailVerificationStore verificationStore;
     private final MailService mailService;
+    private final EmailDomainValidationService emailDomainValidationService;
 
     private static final long EXPIRE_TIME = 5 * 60 * 1000L; // 5분
-    private static final String EMAIL_REGEX = "^[A-Za-z0-9+_.-]+@(.+)$";
 
     /**
      * 인증 코드 생성 및 발송
      */
-    public void sendCode(String email) {
-        validateEmail(email);
+    public void sendCode(String email, Long universityId) {
+        emailDomainValidationService.validate(email, universityId);
 
         String code = generateCode();
         verificationStore.save(email, code, System.currentTimeMillis() + EXPIRE_TIME);
@@ -44,17 +44,12 @@ public class EmailVerificationService {
         }
 
         verificationStore.delete(email);
+        verificationStore.markAsVerified(email);
         log.info("이메일 인증 성공. email: {}", email);
         return true;
     }
 
     private String generateCode() {
         return String.format("%06d", new Random().nextInt(1000000));
-    }
-
-    private void validateEmail(String email) {
-        if (email == null || !Pattern.matches(EMAIL_REGEX, email)) {
-            throw new IllegalArgumentException("올바른 이메일 형식이 아닙니다.");
-        }
     }
 }
