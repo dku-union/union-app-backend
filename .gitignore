@@ -36,6 +36,9 @@ out/
 ### VS Code ###
 .vscode/
 
+### macOS ###
+.DS_Store
+
 ### Secrets and Logs ###
 .env
 src/main/resources/application-local.yml
