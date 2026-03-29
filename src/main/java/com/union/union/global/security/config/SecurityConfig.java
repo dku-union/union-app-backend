@@ -42,6 +42,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
                 .requestMatchers("/api/v1/auth/**").permitAll()
+                .requestMatchers("/api/dev/**").permitAll()
                 .requestMatchers("/auth/email/**").permitAll()
                 .requestMatchers("/api/v1/universities/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/apps/**", "/mini-apps").permitAll()
