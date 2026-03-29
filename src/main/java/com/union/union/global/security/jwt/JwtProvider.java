@@ -69,7 +69,12 @@ public class JwtProvider {
 
     public boolean validateToken(String token) {
         try {
-            parseClaims(token);
+            Claims claims = parseClaims(token);
+            // refresh token은 access token으로 사용할 수 없음
+            if ("refresh".equals(claims.get("type", String.class))) {
+                log.debug("Refresh token cannot be used as access token");
+                return false;
+            }
             return true;
         } catch (ExpiredJwtException e) {
             log.debug("Expired JWT token");
