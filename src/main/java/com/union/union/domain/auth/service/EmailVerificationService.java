@@ -2,6 +2,7 @@ package com.union.union.domain.auth.service;
 
 import com.union.union.domain.auth.store.EmailVerificationStore;
 import com.union.union.domain.university.entity.UniversityDomain;
+import com.union.union.global.common.exception.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -40,10 +41,10 @@ public class EmailVerificationService {
      */
     public boolean verifyCode(String email, String code) {
         String savedCode = verificationStore.get(email)
-                .orElseThrow(() -> new IllegalArgumentException("만료되었거나 유효하지 않은 인증 정보입니다."));
+                .orElseThrow(() -> new BadRequestException("만료되었거나 유효하지 않은 인증 정보입니다."));
 
         if (!savedCode.equals(code)) {
-            throw new IllegalArgumentException("인증번호가 일치하지 않습니다.");
+            throw new BadRequestException("인증번호가 일치하지 않습니다.");
         }
 
         verificationStore.delete(email);

@@ -3,8 +3,6 @@ package com.union.union.domain.miniapp.controller;
 import com.union.union.domain.miniapp.dto.MiniAppRegisterRequestDto;
 import com.union.union.domain.miniapp.dto.MiniAppResponseDto;
 import com.union.union.domain.miniapp.service.MiniAppService;
-import com.union.union.global.infra.gcs.GcsService;
-import com.union.union.global.infra.gcs.dto.GcsSignedUrlResponseDto;
 import com.union.union.global.security.jwt.JwtUserPrincipal;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +22,6 @@ import java.util.UUID;
 public class MiniAppController {
 
     private final MiniAppService miniAppService;
-    private final GcsService gcsService;
 
     @PostMapping
     @PreAuthorize("hasRole('PUBLISHER')")
@@ -73,60 +70,4 @@ public class MiniAppController {
                 .build();
     }
 
-    @PatchMapping("/{id}/approve")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<MiniAppResponseDto> approve(@PathVariable Long id) {
-        MiniAppResponseDto response = miniAppService.approve(id);
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/signed-url")
-    @PreAuthorize("hasRole('PUBLISHER')")
-    public ResponseEntity<GcsSignedUrlResponseDto> getSignedUrl(
-            @RequestParam String filename,
-            @AuthenticationPrincipal JwtUserPrincipal principal
-    ) {
-        GcsSignedUrlResponseDto response = gcsService.getMiniAppSignedUrl(principal.userId(), filename);
-        return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/{id}/download-url")
-    public ResponseEntity<java.util.Map<String, String>> getDownloadUrl(
-            @PathVariable Long id,
-            @AuthenticationPrincipal JwtUserPrincipal principal
-    ) {
-        UUID userId = principal != null ? principal.userId() : null;
-        String launchUrl = miniAppService.getLaunchUrl(id, userId);
-
-        // launchUrl이 GCS 경로를 포함하는 경우 CDN Signed URL로 변환
-        String cdnUrl = gcsService.getCdnDownloadUrl(extractObjectPath(launchUrl));
-        return ResponseEntity.ok(java.util.Map.of("downloadUrl", cdnUrl));
-    }
-
-    @GetMapping("/{id}/test-url")
-    @PreAuthorize("hasRole('PUBLISHER')")
-    public ResponseEntity<java.util.Map<String, String>> getTestUrl(
-            @PathVariable Long id,
-            @AuthenticationPrincipal JwtUserPrincipal principal
-    ) {
-        // 1. 서비스 로직 호출 (권한 체크 및 상태 변경)
-        String launchUrl = miniAppService.getTestLaunchUrl(id, principal.userId());
-
-        // 2. GCS 경로 추출 및 Signed URL 생성
-        String objectPath = extractObjectPath(launchUrl);
-        String cdnUrl = gcsService.getCdnDownloadUrl(objectPath);
-
-        return ResponseEntity.ok(java.util.Map.of("testUrl", cdnUrl));
-    }
-
-    private String extractObjectPath(String url) {
-        // GCS URL 또는 상대 경로에서 오브젝트 경로 추출
-        if (url.contains("storage.googleapis.com/")) {
-            return url.substring(url.indexOf("storage.googleapis.com/") + "storage.googleapis.com/".length());
-        }
-        if (url.startsWith("mini-apps/")) {
-            return url;
-        }
-        return url.startsWith("/") ? url.substring(1) : url;
-    }
 }

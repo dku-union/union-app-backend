@@ -9,6 +9,9 @@ import com.union.union.domain.review.entity.Verdict;
 import com.union.union.domain.review.repository.ReviewRepository;
 import com.union.union.domain.user.entity.User;
 import com.union.union.domain.user.repository.UserRepository;
+import com.union.union.global.common.exception.ConflictException;
+import com.union.union.global.common.exception.EntityNotFoundException;
+import com.union.union.global.common.exception.UnauthorizedAccessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,11 +33,15 @@ public class ReviewService {
 
     @Transactional
     public ReviewResponseDto submitForReview(UUID versionId, UUID publisherId) {
-        AppVersion version = appVersionRepository.findById(versionId)
-                .orElseThrow(() -> new IllegalArgumentException("AppVersion을 찾을 수 없습니다"));
+        AppVersion version = appVersionRepository.findDetailedById(versionId)
+                .orElseThrow(() -> new EntityNotFoundException("AppVersion을 찾을 수 없습니다"));
 
         if (!version.getPublisher().getId().equals(publisherId)) {
-            throw new IllegalArgumentException("본인의 버전만 심사 요청할 수 있습니다");
+            throw new UnauthorizedAccessException("본인의 버전만 심사 요청할 수 있습니다");
+        }
+
+        if (reviewRepository.existsByVersionIdAndVerdict(versionId, Verdict.PENDING)) {
+            throw new ConflictException("이미 심사가 진행 중인 버전입니다");
         }
 
         version.submitForReview();
@@ -58,18 +65,18 @@ public class ReviewService {
     }
 
     public ReviewResponseDto getReview(UUID reviewId) {
-        Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new IllegalArgumentException("Review를 찾을 수 없습니다"));
+        Review review = reviewRepository.findDetailedById(reviewId)
+                .orElseThrow(() -> new EntityNotFoundException("Review를 찾을 수 없습니다"));
         return ReviewResponseDto.from(review);
     }
 
     @Transactional
     public ReviewResponseDto decide(UUID reviewId, ReviewDecisionRequestDto request, UUID adminId) {
-        Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new IllegalArgumentException("Review를 찾을 수 없습니다"));
+        Review review = reviewRepository.findDetailedById(reviewId)
+                .orElseThrow(() -> new EntityNotFoundException("Review를 찾을 수 없습니다"));
 
         User admin = userRepository.findById(adminId)
-                .orElseThrow(() -> new IllegalArgumentException("관리자를 찾을 수 없습니다"));
+                .orElseThrow(() -> new EntityNotFoundException("관리자를 찾을 수 없습니다"));
 
         review.decide(admin, request.verdict(), request.reason());
 
