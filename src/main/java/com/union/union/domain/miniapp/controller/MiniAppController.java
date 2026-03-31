@@ -103,6 +103,22 @@ public class MiniAppController {
         return ResponseEntity.ok(java.util.Map.of("downloadUrl", cdnUrl));
     }
 
+    @GetMapping("/{id}/test-url")
+    @PreAuthorize("hasRole('PUBLISHER')")
+    public ResponseEntity<java.util.Map<String, String>> getTestUrl(
+            @PathVariable Long id,
+            @AuthenticationPrincipal JwtUserPrincipal principal
+    ) {
+        // 1. 서비스 로직 호출 (권한 체크 및 상태 변경)
+        String launchUrl = miniAppService.getTestLaunchUrl(id, principal.userId());
+
+        // 2. GCS 경로 추출 및 Signed URL 생성
+        String objectPath = extractObjectPath(launchUrl);
+        String cdnUrl = gcsService.getCdnDownloadUrl(objectPath);
+
+        return ResponseEntity.ok(java.util.Map.of("testUrl", cdnUrl));
+    }
+
     private String extractObjectPath(String url) {
         // GCS URL 또는 상대 경로에서 오브젝트 경로 추출
         if (url.contains("storage.googleapis.com/")) {
