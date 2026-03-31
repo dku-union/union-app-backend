@@ -3,6 +3,8 @@ package com.union.union.domain.review.entity;
 import com.union.union.domain.appversion.entity.AppVersion;
 import com.union.union.domain.user.entity.User;
 import com.union.union.global.common.entity.BaseEntity;
+import com.union.union.global.common.exception.BadRequestException;
+import com.union.union.global.common.exception.ConflictException;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -12,7 +14,9 @@ import java.util.UUID;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "reviews")
+@Table(name = "reviews", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_review_version", columnNames = {"version_id"})
+})
 public class Review extends BaseEntity {
 
     @Id
@@ -45,10 +49,10 @@ public class Review extends BaseEntity {
 
     public void decide(User reviewer, Verdict verdict, String reason) {
         if (this.verdict != Verdict.PENDING) {
-            throw new IllegalStateException("이미 처리된 심사입니다");
+            throw new ConflictException("이미 처리된 심사입니다");
         }
         if (verdict == Verdict.REJECTED && (reason == null || reason.isBlank())) {
-            throw new IllegalArgumentException("거절 시 사유는 필수입니다");
+            throw new BadRequestException("거절 시 사유는 필수입니다");
         }
         this.reviewer = reviewer;
         this.verdict = verdict;

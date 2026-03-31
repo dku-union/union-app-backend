@@ -1,9 +1,12 @@
 package com.union.union.global.security.config;
 
 import com.union.union.global.security.jwt.JwtAuthenticationFilter;
+import com.union.union.global.security.ratelimit.RateLimitFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -17,6 +20,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -26,8 +30,13 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RateLimitFilter rateLimitFilter;
     private final JwtAuthenticationEntryPoint authenticationEntryPoint;
     private final JwtAccessDeniedHandler accessDeniedHandler;
+    private final Environment environment;
+
+    @Value("${cors.allowed-origins:}")
+    private String allowedOrigins;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -62,6 +71,7 @@ public class SecurityConfig {
                 // All other endpoints require authentication
                 .anyRequest().authenticated()
             )
+            .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -75,7 +85,16 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("*"));
+
+        boolean isLocal = Arrays.asList(environment.getActiveProfiles()).contains("local");
+
+        if (isLocal || allowedOrigins == null || allowedOrigins.isBlank()) {
+            config.setAllowedOriginPatterns(List.of("*"));
+        } else {
+            config.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
+            config.setAllowCredentials(true);
+        }
+
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));

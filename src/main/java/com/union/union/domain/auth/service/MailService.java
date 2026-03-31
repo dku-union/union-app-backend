@@ -2,6 +2,7 @@ package com.union.union.domain.auth.service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import com.union.union.global.common.exception.ExternalServiceException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -39,7 +40,7 @@ public class MailService {
             log.info("이메일 발송 성공: {}", to);
         } catch (MessagingException e) {
             log.error("이메일 발송 실패: {}", to, e);
-            throw new RuntimeException("이메일 발송 중 오류가 발생했습니다.");
+            throw new ExternalServiceException("이메일 발송 중 오류가 발생했습니다.");
         }
     }
 }

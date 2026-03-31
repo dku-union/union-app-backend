@@ -13,6 +13,8 @@ import com.union.union.domain.university.entity.UniversityDomain;
 import com.union.union.domain.university.repository.UniversityDomainRepository;
 import com.union.union.domain.user.entity.User;
 import com.union.union.domain.user.repository.UserRepository;
+import com.union.union.global.common.exception.EntityNotFoundException;
+import com.union.union.global.common.exception.UnauthorizedAccessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -41,16 +43,16 @@ public class MiniAppService {
     @CacheEvict(value = "miniApps", allEntries = true)
     public MiniAppResponseDto register(MiniAppRegisterRequestDto request, UUID userId) {
         User publisher = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다"));
 
         if (publisher.getRole() != User.Role.ROLE_PUBLISHER) {
-            throw new IllegalArgumentException("MiniApp을 등록할 권한이 없습니다 (PUBLISHER 권한 필요)");
+            throw new UnauthorizedAccessException("MiniApp을 등록할 권한이 없습니다 (PUBLISHER 권한 필요)");
         }
 
         UniversityDomain university = null;
         if (request.universityId() != null) {
             university = universityDomainRepository.findById(request.universityId())
-                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 대학교입니다"));
+                    .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 대학교입니다"));
         }
 
         MiniApp miniApp = MiniApp.builder()
@@ -79,7 +81,7 @@ public class MiniAppService {
 
     @Cacheable(value = "popularMiniApps", key = "#limit")
     public List<MiniAppResponseDto> getPopularMiniApps(int limit) {
-        return miniAppRepository.findPopularMiniApps(PageRequest.of(0, limit))
+        return miniAppRepository.findPopularMiniApps(MiniAppStatus.APPROVED, PageRequest.of(0, limit))
                 .stream()
                 .map(MiniAppResponseDto::from)
                 .collect(Collectors.toList());
@@ -87,14 +89,14 @@ public class MiniAppService {
 
     public List<MiniAppResponseDto> getRecommendedMiniApps(UUID userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다"));
 
         // 1. 같은 대학 인기 앱 (Top 5)
         List<MiniApp> universityPopular = miniAppRepository.findRecommendedByUniversity(
-                user.getUniversityName(), PageRequest.of(0, 5));
+                user.getUniversityName(), MiniAppStatus.APPROVED, PageRequest.of(0, 5));
 
         // 2. 내가 최근에 사용한 앱 (Top 5)
-        List<MiniApp> myRecent = miniAppRepository.findRecentByUser(userId, PageRequest.of(0, 5));
+        List<MiniApp> myRecent = miniAppRepository.findRecentByUser(userId, MiniAppStatus.APPROVED, PageRequest.of(0, 5));
 
         // 3. 중복 제거 및 결합
         List<MiniApp> combined = new java.util.ArrayList<>(universityPopular);
@@ -106,7 +108,7 @@ public class MiniAppService {
 
         // 4. 결과가 부족하면 글로벌 인기 앱 추가
         if (combined.size() < 5) {
-            List<MiniApp> globalPopular = miniAppRepository.findPopularMiniApps(PageRequest.of(0, 10));
+            List<MiniApp> globalPopular = miniAppRepository.findPopularMiniApps(MiniAppStatus.APPROVED, PageRequest.of(0, 10));
             for (MiniApp popular : globalPopular) {
                 if (!combined.contains(popular)) {
                     combined.add(popular);
@@ -137,24 +139,24 @@ public class MiniAppService {
     }
 
     public String getLaunchUrl(Long id, UUID userId) {
-        MiniApp miniApp = miniAppRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("MiniApp을 찾을 수 없습니다"));
+        MiniApp miniApp = miniAppRepository.findDetailsById(id)
+                .orElseThrow(() -> new EntityNotFoundException("MiniApp을 찾을 수 없습니다"));
 
         if (miniApp.getStatus() != MiniAppStatus.APPROVED) {
-            throw new IllegalArgumentException("승인되지 않은 MiniApp입니다");
+            throw new UnauthorizedAccessException("승인되지 않은 MiniApp입니다");
         }
 
         // 대학교 제한이 있는 경우 권한 체크
         if (miniApp.getUniversity() != null) {
             if (userId == null) {
-                throw new IllegalArgumentException("해당 대학교 전용 MiniApp입니다. 로그인이 필요합니다.");
+                throw new UnauthorizedAccessException("해당 대학교 전용 MiniApp입니다. 로그인이 필요합니다.");
             }
-            
+
             User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+                    .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다"));
 
             if (!miniApp.getUniversity().getUniversityName().equals(user.getUniversityName())) {
-                throw new IllegalArgumentException("해당 대학교 학생만 접근 가능한 MiniApp입니다");
+                throw new UnauthorizedAccessException("해당 대학교 학생만 접근 가능한 MiniApp입니다");
             }
         }
 
@@ -166,32 +168,4 @@ public class MiniAppService {
         return miniApp.getLaunchUrl();
     }
 
-    @Transactional
-    @CacheEvict(value = "miniApps", allEntries = true)
-    public MiniAppResponseDto approve(Long id) {
-        MiniApp miniApp = miniAppRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("MiniApp을 찾을 수 없습니다"));
-
-        miniApp.approve();
-        log.info("MiniApp 승인 완료. id={}, name={}", miniApp.getId(), miniApp.getName());
-
-        return MiniAppResponseDto.from(miniApp);
-    }
-
-    @Transactional
-    public String getTestLaunchUrl(Long id, UUID userId) {
-        MiniApp miniApp = miniAppRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("MiniApp을 찾을 수 없습니다"));
-
-        // 권한 체크: 퍼블리셔 본인인지 확인
-        if (!miniApp.getPublisher().getId().equals(userId)) {
-            throw new IllegalArgumentException("본인의 MiniApp만 테스트할 수 있습니다");
-        }
-
-        // 상태를 TESTING으로 변경 (기존 회의 내용 반영)
-        miniApp.test();
-        log.info("MiniApp 테스트 시작. id={}, name={}, status={}", miniApp.getId(), miniApp.getName(), miniApp.getStatus());
-
-        return miniApp.getLaunchUrl();
-    }
 }
