@@ -31,7 +31,7 @@ public class DevAuthController {
     public ResponseEntity<TokenResponseDto> issueTestToken(
             @RequestParam(defaultValue = "ROLE_USER") String role
     ) {
-        UUID fakeUserId = UUID.randomUUID();
+        UUID fakeUserId = UUID.fromString("66d1bf78-29b5-45d8-bba7-f08f88bffa23");
         String accessToken = jwtProvider.createAccessToken(fakeUserId, "test@dankook.ac.kr", role);
         String refreshToken = jwtProvider.createRefreshToken(fakeUserId);
 
