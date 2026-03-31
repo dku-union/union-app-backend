@@ -1,7 +1,6 @@
 package com.union.union.domain.user.entity;
 
 import com.union.union.global.common.entity.BaseEntity;
-import com.union.union.domain.publisher.entity.Publisher;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -43,9 +42,6 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Role role;
-
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Publisher publisher;
 
     @Builder
     public User(String email, String password, String nickname, String universityName) {
