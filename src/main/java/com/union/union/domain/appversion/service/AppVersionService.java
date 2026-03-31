@@ -58,8 +58,8 @@ public class AppVersionService {
 
         appVersionRepository.save(version);
 
-        String filename = String.format("mini-apps/%s/versions/%s/bundle.zip",
-                miniApp.getId(), version.getId());
+        String filename = String.format("mini-apps/%s/versions/%s/%s-%s.unionapp",
+                miniApp.getId(), version.getId(), miniApp.getName(), request.versionNumber());
         var signedUrlResponse = gcsService.getMiniAppSignedUrl(publisherId, filename);
 
         log.info("AppVersion 생성 (DRAFT). versionId={}, miniAppId={}", version.getId(), miniApp.getId());
@@ -71,8 +71,9 @@ public class AppVersionService {
     public AppVersionResponseDto confirmUpload(UUID versionId, UUID publisherId) {
         AppVersion version = getVersionWithOwnerCheck(versionId, publisherId);
 
-        String objectPath = String.format("mini-apps/%s/versions/%s/bundle.zip",
-                version.getMiniApp().getId(), version.getId());
+        String objectPath = String.format("mini-apps/%s/versions/%s/%s-%s.unionapp",
+                version.getMiniApp().getId(), version.getId(),
+                version.getMiniApp().getName(), version.getVersionNumber());
 
         Blob blob = storage.get(bucketName, objectPath);
         if (blob == null || !blob.exists()) {
