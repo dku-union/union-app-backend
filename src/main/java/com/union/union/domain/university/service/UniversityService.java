@@ -2,6 +2,7 @@ package com.union.union.domain.university.service;
 
 import com.union.union.domain.university.dto.ExternalUniversityResponseDto;
 import com.union.union.domain.university.dto.UniversityResponseDto;
+import com.union.union.global.common.exception.ExternalServiceException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -67,8 +68,7 @@ public class UniversityService {
 
         } catch (Exception e) {
             log.error("커리어넷 학교 검색 API 호출 중 오류 발생. keyword: {}", keyword, e);
-            // 실무에서는 사용자 전용 Custom Exception 클래스를 만들어서 GlobalExceptionHandler로 잡아냅니다.
-            throw new RuntimeException("대학교 목록을 불러오는 중 오류가 발생했습니다.");
+            throw new ExternalServiceException("대학교 목록을 불러오는 중 오류가 발생했습니다.");
         }
     }
 }

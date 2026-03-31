@@ -1,6 +1,9 @@
 package com.union.union.domain.auth.exception;
 
-public class InvalidUniversityDomainException extends RuntimeException {
+import com.union.union.global.common.exception.BadRequestException;
+
+public class InvalidUniversityDomainException extends BadRequestException {
+
     public InvalidUniversityDomainException(String message) {
         super(message);
     }

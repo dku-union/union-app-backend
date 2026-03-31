@@ -6,6 +6,11 @@ import com.union.union.domain.auth.repository.RefreshTokenRepository;
 import com.union.union.domain.auth.store.EmailVerificationStore;
 import com.union.union.domain.user.entity.User;
 import com.union.union.domain.user.repository.UserRepository;
+import com.union.union.global.common.exception.DuplicateEmailException;
+import com.union.union.global.common.exception.EmailNotVerifiedException;
+import com.union.union.global.common.exception.EntityNotFoundException;
+import com.union.union.global.common.exception.InvalidRefreshTokenException;
+import com.union.union.global.common.exception.UnauthorizedAccessException;
 import com.union.union.global.security.jwt.JwtProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,12 +38,12 @@ public class AuthService {
     public TokenResponseDto signUp(SignUpRequestDto request) {
         // 1. 이메일 중복 확인
         if (userRepository.existsByEmail(request.email())) {
-            throw new IllegalArgumentException("이미 사용 중인 이메일입니다");
+            throw new DuplicateEmailException("이미 사용 중인 이메일입니다");
         }
 
         // 2. 이메일 인증 여부 확인
         if (!verificationStore.isVerified(request.email())) {
-            throw new IllegalArgumentException("이메일 인증이 완료되지 않았습니다");
+            throw new EmailNotVerifiedException("이메일 인증이 완료되지 않았습니다");
         }
 
         // 3. 이메일 도메인으로 대학교 자동 판별
@@ -62,10 +67,18 @@ public class AuthService {
     @Transactional
     public TokenResponseDto login(LoginRequestDto request) {
         User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다"));
+                .orElseThrow(() -> new UnauthorizedAccessException("이메일 또는 비밀번호가 올바르지 않습니다"));
 
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다");
+            throw new UnauthorizedAccessException("이메일 또는 비밀번호가 올바르지 않습니다");
+        }
+
+        if (user.getUserStatus() == User.UserStatus.WITHDRAWN) {
+            throw new UnauthorizedAccessException("탈퇴한 계정입니다");
+        }
+
+        if (user.getUserStatus() == User.UserStatus.SUSPENDED) {
+            throw new UnauthorizedAccessException("정지된 계정입니다. 관리자에게 문의하세요");
         }
 
         log.info("로그인 성공. userId={}", user.getId());
@@ -75,18 +88,18 @@ public class AuthService {
     @Transactional
     public TokenResponseDto refresh(RefreshRequestDto request) {
         RefreshToken storedToken = refreshTokenRepository.findByToken(request.refreshToken())
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 refresh token입니다"));
+                .orElseThrow(() -> new InvalidRefreshTokenException("유효하지 않은 refresh token입니다"));
 
         // 이미 무효화된 토큰 재사용 → 탈취 감지 → 전체 세션 kill
         if (storedToken.isRevoked()) {
             log.warn("Refresh token 재사용 감지! userId={}. 전체 세션 무효화.", storedToken.getUser().getId());
             refreshTokenRepository.revokeAllByUserId(storedToken.getUser().getId());
-            throw new IllegalArgumentException("보안상 모든 세션이 로그아웃되었습니다. 다시 로그인해주세요.");
+            throw new InvalidRefreshTokenException("보안상 모든 세션이 로그아웃되었습니다. 다시 로그인해주세요.");
         }
 
         if (storedToken.isExpired()) {
             storedToken.revoke();
-            throw new IllegalArgumentException("세션이 만료되었습니다. 다시 로그인해주세요.");
+            throw new InvalidRefreshTokenException("세션이 만료되었습니다. 다시 로그인해주세요.");
         }
 
         // Rotation: 기존 토큰 무효화
@@ -99,6 +112,8 @@ public class AuthService {
 
     @Transactional
     public void logout(UUID userId) {
+        userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다"));
         refreshTokenRepository.revokeAllByUserId(userId);
         log.info("로그아웃. userId={}", userId);
     }

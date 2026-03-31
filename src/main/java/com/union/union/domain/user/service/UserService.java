@@ -28,6 +28,6 @@ public class UserService {
     @Transactional
     public void deleteUser(UUID id) {
         User user = getUser(id);
-        userRepository.delete(user);
+        user.withdraw();
     }
 }
