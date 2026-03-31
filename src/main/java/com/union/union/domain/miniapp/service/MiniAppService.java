@@ -177,4 +177,21 @@ public class MiniAppService {
 
         return MiniAppResponseDto.from(miniApp);
     }
+
+    @Transactional
+    public String getTestLaunchUrl(Long id, UUID userId) {
+        MiniApp miniApp = miniAppRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("MiniApp을 찾을 수 없습니다"));
+
+        // 권한 체크: 퍼블리셔 본인인지 확인
+        if (!miniApp.getPublisher().getId().equals(userId)) {
+            throw new IllegalArgumentException("본인의 MiniApp만 테스트할 수 있습니다");
+        }
+
+        // 상태를 TESTING으로 변경 (기존 회의 내용 반영)
+        miniApp.test();
+        log.info("MiniApp 테스트 시작. id={}, name={}, status={}", miniApp.getId(), miniApp.getName(), miniApp.getStatus());
+
+        return miniApp.getLaunchUrl();
+    }
 }
