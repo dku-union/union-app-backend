@@ -50,7 +50,6 @@ spring:
       storage:
         bucket: ${GCS_BUCKET_NAME:union-app-miniapps}
 
-
 jwt:
   secret: ${JWT_SECRET:union-super-app-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256}
   access-token-expiration: 1800000     # 30분
@@ -59,3 +58,8 @@ jwt:
 careernet:
   api:
     key: ${CAREERNET_API_KEY}
+
+cdn:
+  base-url: ${CDN_BASE_URL}
+  key-name: ${CDN_KEY_NAME}
+  key-value: ${CDN_KEY_VALUE}

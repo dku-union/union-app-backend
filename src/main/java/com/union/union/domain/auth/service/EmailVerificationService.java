@@ -1,12 +1,12 @@
 package com.union.union.domain.auth.service;
 
 import com.union.union.domain.auth.store.EmailVerificationStore;
+import com.union.union.domain.university.entity.UniversityDomain;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.Random;
-import java.util.regex.Pattern;
+import java.security.SecureRandom;
 
 @Slf4j
 @Service
@@ -20,16 +20,19 @@ public class EmailVerificationService {
     private static final long EXPIRE_TIME = 5 * 60 * 1000L; // 5분
 
     /**
-     * 인증 코드 생성 및 발송
+     * 이메일 도메인을 검증하고 인증 코드를 발송합니다.
+     * @return 자동 판별된 대학교명
      */
-    public void sendCode(String email, Long universityId) {
-        emailDomainValidationService.validate(email, universityId);
+    public String sendCode(String email) {
+        UniversityDomain university = emailDomainValidationService.validateAndResolve(email);
 
         String code = generateCode();
         verificationStore.save(email, code, System.currentTimeMillis() + EXPIRE_TIME);
-        
+
         mailService.sendVerificationEmail(email, code);
         log.info("인증 코드 발송 완료. email: {}", email);
+
+        return university.getUniversityName();
     }
 
     /**
@@ -50,6 +53,6 @@ public class EmailVerificationService {
     }
 
     private String generateCode() {
-        return String.format("%06d", new Random().nextInt(1000000));
+        return String.format("%06d", new SecureRandom().nextInt(1000000));
     }
 }

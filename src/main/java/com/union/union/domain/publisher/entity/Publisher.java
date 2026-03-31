@@ -1,56 +1,67 @@
 package com.union.union.domain.publisher.entity;
 
-import com.union.union.global.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "publisher")
-public class Publisher extends BaseEntity {
+@Table(name = "publishers")
+@EntityListeners(AuditingEntityListener.class)
+public class Publisher {
 
     @Id
-    @Column(name = "publisher_id", columnDefinition = "uuid")
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "publisher_id", nullable = false, unique = true, columnDefinition = "uuid")
+    private UUID publisherId;
 
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false, unique = true, length = 255)
+    @Column(nullable = false, length = 100)
     private String email;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String password;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "pubstatus", nullable = false, length = 20)
-    private PublisherStatus status;
+    private PublisherStatus pubstatus;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false, length = 20)
-    private PublisherRole role;
+    @Column(nullable = false, length = 20)
+    private String role;
+
+    @CreatedDate
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
 
     @Builder
-    public Publisher(UUID id, String name, String email, String password, PublisherStatus status, PublisherRole role) {
-        this.id = id != null ? id : UUID.randomUUID();
+    public Publisher(UUID publisherId, String name, String email, String password,
+                     String description, PublisherStatus pubstatus, String role) {
+        this.publisherId = publisherId;
         this.name = name;
         this.email = email;
         this.password = password;
-        this.status = status != null ? status : PublisherStatus.PENDING;
-        this.role = role != null ? role : PublisherRole.ROLE_USER;
+        this.description = description;
+        this.pubstatus = pubstatus != null ? pubstatus : PublisherStatus.PENDING;
+        this.role = role != null ? role : "ROLE_USER";
     }
 
     public void approve() {
-        this.status = PublisherStatus.APPROVED;
-    }
-
-    public void activate() {
-        this.status = PublisherStatus.ACTIVE;
+        this.pubstatus = PublisherStatus.ACTIVE;
     }
 
     public void reject() {
-        this.status = PublisherStatus.REJECTED;
+        this.pubstatus = PublisherStatus.REJECTED;
     }
 }

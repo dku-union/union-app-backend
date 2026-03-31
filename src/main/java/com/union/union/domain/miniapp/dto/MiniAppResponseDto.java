@@ -23,7 +23,7 @@ public record MiniAppResponseDto(
             miniApp.getDescription(),
             miniApp.getIconUrl(),
             miniApp.getLaunchUrl(),
-            miniApp.getPublisher().getName(),
+            miniApp.getPublisher().getNickname(),
             miniApp.getUniversity() != null ? miniApp.getUniversity().getUniversityName() : null,
             miniApp.getStatus(),
             miniApp.getCreatedAt()

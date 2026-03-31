@@ -9,8 +9,6 @@ import com.union.union.domain.miniapp.usage.dto.MiniAppUsageStatsDto;
 import com.union.union.domain.miniapp.usage.dto.PublisherStatisticsResponseDto;
 import com.union.union.domain.miniapp.usage.entity.MiniAppUsage;
 import com.union.union.domain.miniapp.usage.repository.MiniAppUsageRepository;
-import com.union.union.domain.publisher.entity.Publisher;
-import com.union.union.domain.publisher.repository.PublisherRepository;
 import com.union.union.domain.university.entity.UniversityDomain;
 import com.union.union.domain.university.repository.UniversityDomainRepository;
 import com.union.union.domain.user.entity.User;
@@ -36,15 +34,18 @@ public class MiniAppService {
 
     private final MiniAppRepository miniAppRepository;
     private final UserRepository userRepository;
-    private final PublisherRepository publisherRepository;
     private final UniversityDomainRepository universityDomainRepository;
     private final MiniAppUsageRepository miniAppUsageRepository;
 
     @Transactional
     @CacheEvict(value = "miniApps", allEntries = true)
-    public MiniAppResponseDto register(MiniAppRegisterRequestDto request, UUID publisherId) {
-        Publisher publisher = publisherRepository.findById(publisherId)
-                .orElseThrow(() -> new IllegalArgumentException("퍼블리셔를 찾을 수 없습니다"));
+    public MiniAppResponseDto register(MiniAppRegisterRequestDto request, UUID userId) {
+        User publisher = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+
+        if (publisher.getRole() != User.Role.ROLE_PUBLISHER) {
+            throw new IllegalArgumentException("MiniApp을 등록할 권한이 없습니다 (PUBLISHER 권한 필요)");
+        }
 
         UniversityDomain university = null;
         if (request.universityId() != null) {
@@ -63,8 +64,7 @@ public class MiniAppService {
                 .build();
 
         miniAppRepository.save(miniApp);
-        log.info("MiniApp 등록 완료. id={}, name={}, publisher={}", miniApp.getId(), miniApp.getName(),
-                publisher.getEmail());
+        log.info("MiniApp 등록 완료. id={}, name={}, publisher={}", miniApp.getId(), miniApp.getName(), publisher.getEmail());
 
         return MiniAppResponseDto.from(miniApp);
     }
@@ -111,8 +111,7 @@ public class MiniAppService {
                 if (!combined.contains(popular)) {
                     combined.add(popular);
                 }
-                if (combined.size() >= 10)
-                    break;
+                if (combined.size() >= 10) break;
             }
         }
 
@@ -123,11 +122,10 @@ public class MiniAppService {
 
     public PublisherStatisticsResponseDto getPublisherStatistics(UUID publisherId) {
         LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
-
+        
         long totalLaunchCount = miniAppUsageRepository.countUsageByPublisher(publisherId, sevenDaysAgo);
-        List<MiniAppUsageStatsDto> appStats = miniAppUsageRepository.findUsageStatsByPublisher(publisherId,
-                sevenDaysAgo);
-
+        List<MiniAppUsageStatsDto> appStats = miniAppUsageRepository.findUsageStatsByPublisher(publisherId, sevenDaysAgo);
+        
         return new PublisherStatisticsResponseDto(totalLaunchCount, appStats);
     }
 
@@ -151,7 +149,7 @@ public class MiniAppService {
             if (userId == null) {
                 throw new IllegalArgumentException("해당 대학교 전용 MiniApp입니다. 로그인이 필요합니다.");
             }
-
+            
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
 

@@ -15,7 +15,7 @@ public interface MiniAppUsageRepository extends JpaRepository<MiniAppUsage, Long
     @Query("SELECT new com.union.union.domain.miniapp.usage.dto.MiniAppUsageStatsDto(m.id, m.name, COUNT(u)) " +
            "FROM MiniApp m " +
            "LEFT JOIN MiniAppUsage u ON m.id = u.miniAppId " +
-           "WHERE m.publisher.publisherId = :publisherId " +
+           "WHERE m.publisher.id = :publisherId " +
            "AND (u.timestamp IS NULL OR u.timestamp >= :startDate) " +
            "GROUP BY m.id, m.name")
     List<MiniAppUsageStatsDto> findUsageStatsByPublisher(
@@ -26,7 +26,7 @@ public interface MiniAppUsageRepository extends JpaRepository<MiniAppUsage, Long
     @Query("SELECT COUNT(u) " +
            "FROM MiniApp m " +
            "JOIN MiniAppUsage u ON m.id = u.miniAppId " +
-           "WHERE m.publisher.publisherId = :publisherId " +
+           "WHERE m.publisher.id = :publisherId " +
            "AND u.timestamp >= :startDate")
     long countUsageByPublisher(
             @Param("publisherId") UUID publisherId, 

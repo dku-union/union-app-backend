@@ -4,8 +4,6 @@ import com.union.union.domain.auth.dto.*;
 import com.union.union.domain.auth.entity.RefreshToken;
 import com.union.union.domain.auth.repository.RefreshTokenRepository;
 import com.union.union.domain.auth.store.EmailVerificationStore;
-import com.union.union.domain.university.entity.UniversityDomain;
-import com.union.union.domain.university.repository.UniversityDomainRepository;
 import com.union.union.domain.user.entity.User;
 import com.union.union.domain.user.repository.UserRepository;
 import com.union.union.global.security.jwt.JwtProvider;
@@ -29,7 +27,7 @@ public class AuthService {
     private final JwtProvider jwtProvider;
     private final PasswordEncoder passwordEncoder;
     private final EmailVerificationStore verificationStore;
-    private final UniversityDomainRepository universityDomainRepository;
+    private final EmailDomainValidationService emailDomainValidationService;
 
     @Transactional
     public TokenResponseDto signUp(SignUpRequestDto request) {
@@ -43,21 +41,21 @@ public class AuthService {
             throw new IllegalArgumentException("이메일 인증이 완료되지 않았습니다");
         }
 
-        // 3. 학교 정보 조회
-        UniversityDomain university = universityDomainRepository.findById(request.universityId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 대학교입니다"));
+        // 3. 이메일 도메인으로 대학교 자동 판별
+        String universityName = emailDomainValidationService.validateAndResolve(request.email())
+                .getUniversityName();
 
         User user = User.builder()
                 .email(request.email())
                 .password(passwordEncoder.encode(request.password()))
                 .nickname(request.nickname())
-                .universityName(university.getUniversityName())
+                .universityName(universityName)
                 .build();
-        
-        user.verify(); // 인증 상태 완료로 변경
+
+        user.verify();
         userRepository.save(user);
 
-        log.info("회원가입 완료. userId={}, email={}, university={}", user.getId(), user.getEmail(), university.getUniversityName());
+        log.info("회원가입 완료. userId={}", user.getId());
         return issueTokens(user);
     }
 

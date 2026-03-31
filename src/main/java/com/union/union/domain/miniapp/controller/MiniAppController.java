@@ -89,4 +89,28 @@ public class MiniAppController {
         GcsSignedUrlResponseDto response = gcsService.getMiniAppSignedUrl(principal.userId(), filename);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/{id}/download-url")
+    public ResponseEntity<java.util.Map<String, String>> getDownloadUrl(
+            @PathVariable Long id,
+            @AuthenticationPrincipal JwtUserPrincipal principal
+    ) {
+        UUID userId = principal != null ? principal.userId() : null;
+        String launchUrl = miniAppService.getLaunchUrl(id, userId);
+
+        // launchUrl이 GCS 경로를 포함하는 경우 CDN Signed URL로 변환
+        String cdnUrl = gcsService.getCdnDownloadUrl(extractObjectPath(launchUrl));
+        return ResponseEntity.ok(java.util.Map.of("downloadUrl", cdnUrl));
+    }
+
+    private String extractObjectPath(String url) {
+        // GCS URL 또는 상대 경로에서 오브젝트 경로 추출
+        if (url.contains("storage.googleapis.com/")) {
+            return url.substring(url.indexOf("storage.googleapis.com/") + "storage.googleapis.com/".length());
+        }
+        if (url.startsWith("mini-apps/")) {
+            return url;
+        }
+        return url.startsWith("/") ? url.substring(1) : url;
+    }
 }

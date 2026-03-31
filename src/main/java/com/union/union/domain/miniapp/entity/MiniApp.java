@@ -1,7 +1,7 @@
 package com.union.union.domain.miniapp.entity;
 
-import com.union.union.domain.publisher.entity.Publisher;
 import com.union.union.domain.university.entity.UniversityDomain;
+import com.union.union.domain.user.entity.User;
 import com.union.union.global.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -9,7 +9,7 @@ import lombok.*;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "mini_app")
+@Table(name = "mini_apps")
 public class MiniApp extends BaseEntity {
 
     @Id
@@ -30,7 +30,7 @@ public class MiniApp extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "publisher_id", nullable = false)
-    private Publisher publisher;
+    private User publisher;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "university_id")
@@ -42,7 +42,7 @@ public class MiniApp extends BaseEntity {
 
     @Builder
     public MiniApp(String name, String description, String iconUrl, String launchUrl, 
-                   Publisher publisher, UniversityDomain university, MiniAppStatus status) {
+                   User publisher, UniversityDomain university, MiniAppStatus status) {
         this.name = name;
         this.description = description;
         this.iconUrl = iconUrl;

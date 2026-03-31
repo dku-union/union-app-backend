@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface PublisherRepository extends JpaRepository<Publisher, UUID> {
-    Optional<Publisher> findByEmail(String email);
-    boolean existsByEmail(String email);
+public interface PublisherRepository extends JpaRepository<Publisher, Long> {
+    Optional<Publisher> findByPublisherId(UUID publisherId);
+    boolean existsByPublisherId(UUID publisherId);
 }

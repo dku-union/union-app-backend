@@ -17,21 +17,20 @@ public class EmailDomainValidationService {
     private final UniversityDomainRepository universityDomainRepository;
 
     /**
-     * 이메일 주소의 도메인이 선택한 대학교의 허용된 이메일 도메인인지 검증합니다.
+     * 이메일 도메인으로 대학교를 자동 판별하고 반환합니다.
+     * @return 매칭된 UniversityDomain
+     * @throws InvalidUniversityDomainException 등록되지 않은 대학교 도메인인 경우
      */
-    public void validate(String email, Long universityId) {
+    public UniversityDomain validateAndResolve(String email) {
         // 1. 형식 검증
         emailFormatValidator.validate(email);
-        
-        // 2. 대학교 정보 조회
-        UniversityDomain universityDomain = universityDomainRepository.findById(universityId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 대학교입니다."));
 
-        // 3. 도메인 추출 및 검증
+        // 2. 도메인 추출
         String domain = emailDomainValidator.extractDomain(email);
 
-        if (!domain.equals(universityDomain.getDomain())) {
-            throw new InvalidUniversityDomainException("선택한 대학교의 이메일 도메인과 일치하지 않습니다: " + domain);
-        }
+        // 3. DB에서 대학교 조회
+        return universityDomainRepository.findByDomain(domain)
+                .orElseThrow(() -> new InvalidUniversityDomainException(
+                        "등록되지 않은 대학교 이메일입니다: " + domain));
     }
 }

@@ -4,11 +4,17 @@ import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.HttpMethod;
 import com.google.cloud.storage.Storage;
 import com.union.union.global.infra.gcs.dto.GcsSignedUrlResponseDto;
+import com.union.union.global.infra.redis.RedisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.net.URL;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Base64;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -17,16 +23,24 @@ import java.util.concurrent.TimeUnit;
 public class GcsService {
 
     private final Storage storage;
+    private final CdnSignedUrlProperties cdnProperties;
+    private final RedisService redisService;
 
     @Value("${spring.cloud.gcp.storage.bucket}")
     private String bucketName;
 
+    private static final String CDN_URL_CACHE_PREFIX = "cdn:signed-url:";
+    private static final long CDN_URL_EXPIRATION_SECONDS = 3600;      // CDN URL 유효: 1시간
+    private static final long REDIS_CACHE_SECONDS = 3000;             // Redis 캐시: 50분 (10분 버퍼)
+
+    /**
+     * 업로드용 GCS Signed URL (PUT, 5분)
+     */
     public GcsSignedUrlResponseDto getMiniAppSignedUrl(UUID publisherId, String filename) {
         String blobName = String.format("mini-apps/%s/%s", publisherId, filename);
-        
+
         BlobInfo blobInfo = BlobInfo.newBuilder(bucketName, blobName).build();
-        
-        // Signed URL 생성 (PUT 방식, 5분 유효)
+
         URL signedUrl = storage.signUrl(
                 blobInfo,
                 5,
@@ -35,8 +49,44 @@ public class GcsService {
                 Storage.SignUrlOption.withV4Signature()
         );
 
-        String publicUrl = String.format("https://storage.googleapis.com/%s/%s", bucketName, blobName);
+        String downloadUrl = getCdnDownloadUrl(blobName);
 
-        return new GcsSignedUrlResponseDto(signedUrl.toString(), publicUrl);
+        return new GcsSignedUrlResponseDto(signedUrl.toString(), downloadUrl);
+    }
+
+    /**
+     * CDN Signed URL 조회 (Redis 캐시 → 미스 시 생성)
+     */
+    public String getCdnDownloadUrl(String objectPath) {
+        String cacheKey = CDN_URL_CACHE_PREFIX + objectPath;
+
+        return redisService.get(cacheKey)
+                .orElseGet(() -> {
+                    String signedUrl = generateCdnSignedUrl(objectPath, CDN_URL_EXPIRATION_SECONDS);
+                    redisService.setValuesWithTimeout(cacheKey, signedUrl, Duration.ofSeconds(REDIS_CACHE_SECONDS));
+                    return signedUrl;
+                });
+    }
+
+    /**
+     * CDN Signed URL 생성 (HMAC-SHA1)
+     */
+    private String generateCdnSignedUrl(String objectPath, long expirationSeconds) {
+        String urlPrefix = cdnProperties.baseUrl() + "/" + objectPath;
+        long expiration = Instant.now().getEpochSecond() + expirationSeconds;
+
+        String urlToSign = urlPrefix + "?Expires=" + expiration + "&KeyName=" + cdnProperties.keyName();
+
+        try {
+            byte[] keyBytes = Base64.getUrlDecoder().decode(cdnProperties.keyValue());
+            Mac mac = Mac.getInstance("HmacSHA1");
+            mac.init(new SecretKeySpec(keyBytes, "HmacSHA1"));
+            byte[] signature = mac.doFinal(urlToSign.getBytes());
+            String encodedSignature = Base64.getUrlEncoder().withoutPadding().encodeToString(signature);
+
+            return urlToSign + "&Signature=" + encodedSignature;
+        } catch (Exception e) {
+            throw new RuntimeException("CDN Signed URL 생성 실패", e);
+        }
     }
 }
