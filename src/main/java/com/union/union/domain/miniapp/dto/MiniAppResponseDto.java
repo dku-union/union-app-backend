@@ -10,9 +10,7 @@ public record MiniAppResponseDto(
     String name,
     String description,
     String iconUrl,
-    String launchUrl,
-    String publisherNickname,
-    String universityName,
+    String workspaceName,
     MiniAppStatus status,
     LocalDateTime createdAt
 ) {
@@ -22,9 +20,7 @@ public record MiniAppResponseDto(
             miniApp.getName(),
             miniApp.getDescription(),
             miniApp.getIconUrl(),
-            miniApp.getLaunchUrl(),
-            miniApp.getPublisher().getNickname(),
-            miniApp.getUniversity() != null ? miniApp.getUniversity().getUniversityName() : null,
+            miniApp.getWorkspace().getName(),
             miniApp.getStatus(),
             miniApp.getCreatedAt()
         );

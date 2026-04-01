@@ -1,7 +1,6 @@
 package com.union.union.domain.appversion.entity;
 
 import com.union.union.domain.miniapp.entity.MiniApp;
-import com.union.union.domain.user.entity.User;
 import com.union.union.global.common.exception.ConflictException;
 import com.union.union.global.common.entity.BaseEntity;
 import jakarta.persistence.*;
@@ -25,9 +24,6 @@ public class AppVersion extends BaseEntity {
     @JoinColumn(name = "mini_app_id", nullable = false)
     private MiniApp miniApp;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "publisher_id", nullable = false)
-    private User publisher;
 
     @Column(nullable = false, length = 20)
     private String versionNumber;
@@ -47,9 +43,8 @@ public class AppVersion extends BaseEntity {
     private LocalDateTime testedAt;
 
     @Builder
-    public AppVersion(MiniApp miniApp, User publisher, String versionNumber, String releaseNotes) {
+    public AppVersion(MiniApp miniApp, String versionNumber, String releaseNotes) {
         this.miniApp = miniApp;
-        this.publisher = publisher;
         this.versionNumber = versionNumber;
         this.releaseNotes = releaseNotes;
         this.status = VersionStatus.DRAFT;
