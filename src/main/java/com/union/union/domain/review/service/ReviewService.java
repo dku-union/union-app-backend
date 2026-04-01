@@ -9,6 +9,7 @@ import com.union.union.domain.review.entity.Verdict;
 import com.union.union.domain.review.repository.ReviewRepository;
 import com.union.union.domain.user.entity.User;
 import com.union.union.domain.user.repository.UserRepository;
+import com.union.union.domain.workspace.repository.WorkspaceMemberRepository;
 import com.union.union.global.common.exception.ConflictException;
 import com.union.union.global.common.exception.EntityNotFoundException;
 import com.union.union.global.common.exception.UnauthorizedAccessException;
@@ -30,14 +31,16 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final AppVersionRepository appVersionRepository;
     private final UserRepository userRepository;
+    private final WorkspaceMemberRepository workspaceMemberRepository;
 
     @Transactional
     public ReviewResponseDto submitForReview(UUID versionId, UUID publisherId) {
         AppVersion version = appVersionRepository.findDetailedById(versionId)
                 .orElseThrow(() -> new EntityNotFoundException("AppVersion을 찾을 수 없습니다"));
 
-        if (!version.getPublisher().getId().equals(publisherId)) {
-            throw new UnauthorizedAccessException("본인의 버전만 심사 요청할 수 있습니다");
+        if (!workspaceMemberRepository.existsByWorkspace_WorkspaceIdAndPublisher_PublisherId(
+                version.getMiniApp().getWorkspace().getWorkspaceId(), publisherId)) {
+            throw new UnauthorizedAccessException("본인 워크스페이스의 버전만 심사 요청할 수 있습니다");
         }
 
         if (reviewRepository.existsByVersionIdAndVerdict(versionId, Verdict.PENDING)) {

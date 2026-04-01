@@ -9,8 +9,7 @@ import com.union.union.domain.appversion.entity.AppVersion;
 import com.union.union.domain.appversion.repository.AppVersionRepository;
 import com.union.union.domain.miniapp.entity.MiniApp;
 import com.union.union.domain.miniapp.repository.MiniAppRepository;
-import com.union.union.domain.user.entity.User;
-import com.union.union.domain.user.repository.UserRepository;
+import com.union.union.domain.workspace.repository.WorkspaceMemberRepository;
 import com.union.union.global.common.exception.ConflictException;
 import com.union.union.global.common.exception.EntityNotFoundException;
 import com.union.union.global.common.exception.UnauthorizedAccessException;
@@ -33,7 +32,7 @@ public class AppVersionService {
 
     private final AppVersionRepository appVersionRepository;
     private final MiniAppRepository miniAppRepository;
-    private final UserRepository userRepository;
+    private final WorkspaceMemberRepository workspaceMemberRepository;
     private final GcsService gcsService;
     private final Storage storage;
 
@@ -42,19 +41,13 @@ public class AppVersionService {
 
     @Transactional
     public CreateVersionResponseDto createVersion(CreateVersionRequestDto request, UUID publisherId) {
-        User publisher = userRepository.findById(publisherId)
-                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다"));
-
-        MiniApp miniApp = miniAppRepository.findDetailsById(request.miniAppId())
+        MiniApp miniApp = miniAppRepository.findById(request.miniAppId())
                 .orElseThrow(() -> new EntityNotFoundException("MiniApp을 찾을 수 없습니다"));
 
-        if (!miniApp.getPublisher().getId().equals(publisherId)) {
-            throw new UnauthorizedAccessException("본인의 MiniApp에만 버전을 추가할 수 있습니다");
-        }
+        validateWorkspaceMembership(miniApp.getWorkspace().getWorkspaceId(), publisherId);
 
         AppVersion version = AppVersion.builder()
                 .miniApp(miniApp)
-                .publisher(publisher)
                 .versionNumber(request.versionNumber())
                 .releaseNotes(request.releaseNotes())
                 .build();
@@ -128,10 +121,14 @@ public class AppVersionService {
         AppVersion version = appVersionRepository.findDetailedById(versionId)
                 .orElseThrow(() -> new EntityNotFoundException("AppVersion을 찾을 수 없습니다"));
 
-        if (!version.getPublisher().getId().equals(publisherId)) {
-            throw new UnauthorizedAccessException("본인의 버전만 수정할 수 있습니다");
-        }
+        validateWorkspaceMembership(version.getMiniApp().getWorkspace().getWorkspaceId(), publisherId);
 
         return version;
+    }
+
+    private void validateWorkspaceMembership(UUID workspaceId, UUID publisherId) {
+        if (!workspaceMemberRepository.existsByWorkspace_WorkspaceIdAndPublisher_PublisherId(workspaceId, publisherId)) {
+            throw new UnauthorizedAccessException("해당 워크스페이스의 멤버가 아닙니다");
+        }
     }
 }
