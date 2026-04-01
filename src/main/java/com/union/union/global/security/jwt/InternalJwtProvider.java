@@ -21,6 +21,8 @@ import java.util.UUID;
 @Component
 public class InternalJwtProvider {
 
+    private static final String EXPECTED_ISSUER = "union-dashboard";
+
     private final SecretKey key;
 
     public InternalJwtProvider(InternalJwtProperties properties) {
@@ -54,6 +56,7 @@ public class InternalJwtProvider {
     private Claims parseClaims(String token) {
         return Jwts.parser()
                 .verifyWith(key)
+                .requireIssuer(EXPECTED_ISSUER)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
