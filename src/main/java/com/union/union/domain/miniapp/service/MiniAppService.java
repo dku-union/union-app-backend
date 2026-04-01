@@ -15,8 +15,8 @@ import com.union.union.domain.miniapp.usage.repository.MiniAppUsageRepository;
 import com.union.union.domain.user.entity.User;
 import com.union.union.domain.user.repository.UserRepository;
 import com.union.union.domain.workspace.entity.Workspace;
-import com.union.union.domain.workspace.repository.WorkspaceMemberRepository;
 import com.union.union.domain.workspace.repository.WorkspaceRepository;
+import com.union.union.domain.workspace.service.WorkspaceAuthorizationService;
 import com.union.union.global.common.exception.EntityNotFoundException;
 import com.union.union.global.common.exception.UnauthorizedAccessException;
 import com.union.union.global.infra.gcs.GcsService;
@@ -42,7 +42,7 @@ public class MiniAppService {
     private final MiniAppRepository miniAppRepository;
     private final UserRepository userRepository;
     private final WorkspaceRepository workspaceRepository;
-    private final WorkspaceMemberRepository workspaceMemberRepository;
+    private final WorkspaceAuthorizationService workspaceAuthorizationService;
     private final MiniAppUsageRepository miniAppUsageRepository;
     private final AppVersionRepository appVersionRepository;
     private final GcsService gcsService;
@@ -53,7 +53,7 @@ public class MiniAppService {
         Workspace workspace = workspaceRepository.findById(request.workspaceId())
                 .orElseThrow(() -> new EntityNotFoundException("워크스페이스를 찾을 수 없습니다"));
 
-        validateWorkspaceMembership(workspace.getWorkspaceId(), publisherId);
+        workspaceAuthorizationService.validateMembership(workspace.getWorkspaceId(), publisherId);
 
         MiniApp miniApp = MiniApp.builder()
                 .name(request.name())
@@ -98,26 +98,21 @@ public class MiniAppService {
         // 2. 내가 최근에 사용한 앱 (Top 5)
         List<MiniApp> myRecent = miniAppRepository.findRecentByUser(userId, MiniAppStatus.APPROVED, PageRequest.of(0, 5));
 
-        // 3. 중복 제거 및 결합
-        List<MiniApp> combined = new java.util.ArrayList<>(universityPopular);
-        for (MiniApp recent : myRecent) {
-            if (!combined.contains(recent)) {
-                combined.add(recent);
-            }
-        }
+        // 3. ID 기반 중복 제거 및 결합
+        java.util.LinkedHashMap<Long, MiniApp> combined = new java.util.LinkedHashMap<>();
+        universityPopular.forEach(m -> combined.put(m.getId(), m));
+        myRecent.forEach(m -> combined.putIfAbsent(m.getId(), m));
 
         // 4. 결과가 부족하면 글로벌 인기 앱 추가
         if (combined.size() < 5) {
             List<MiniApp> globalPopular = miniAppRepository.findPopularMiniApps(MiniAppStatus.APPROVED, PageRequest.of(0, 10));
             for (MiniApp popular : globalPopular) {
-                if (!combined.contains(popular)) {
-                    combined.add(popular);
-                }
+                combined.putIfAbsent(popular.getId(), popular);
                 if (combined.size() >= 10) break;
             }
         }
 
-        return combined.stream()
+        return combined.values().stream()
                 .map(MiniAppResponseDto::from)
                 .collect(Collectors.toList());
     }
@@ -152,17 +147,9 @@ public class MiniAppService {
                 .findFirstByMiniAppIdAndStatusOrderByCreatedAtDesc(id, VersionStatus.DEPLOYED)
                 .orElseThrow(() -> new EntityNotFoundException("배포된 버전이 없습니다"));
 
-        // 사용 로그 기록
-        if (userId != null) {
-            miniAppUsageRepository.save(MiniAppUsage.create(userId, id));
-        }
+        miniAppUsageRepository.save(MiniAppUsage.create(userId, id));
 
         return gcsService.getCdnDownloadUrl(deployedVersion.getBuildFileUrl());
     }
 
-    private void validateWorkspaceMembership(UUID workspaceId, UUID publisherId) {
-        if (!workspaceMemberRepository.existsByWorkspace_WorkspaceIdAndPublisher_PublisherId(workspaceId, publisherId)) {
-            throw new UnauthorizedAccessException("해당 워크스페이스의 멤버가 아닙니다");
-        }
-    }
 }

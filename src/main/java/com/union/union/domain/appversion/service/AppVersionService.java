@@ -9,10 +9,9 @@ import com.union.union.domain.appversion.entity.AppVersion;
 import com.union.union.domain.appversion.repository.AppVersionRepository;
 import com.union.union.domain.miniapp.entity.MiniApp;
 import com.union.union.domain.miniapp.repository.MiniAppRepository;
-import com.union.union.domain.workspace.repository.WorkspaceMemberRepository;
+import com.union.union.domain.workspace.service.WorkspaceAuthorizationService;
 import com.union.union.global.common.exception.ConflictException;
 import com.union.union.global.common.exception.EntityNotFoundException;
-import com.union.union.global.common.exception.UnauthorizedAccessException;
 import com.union.union.global.infra.gcs.GcsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +31,7 @@ public class AppVersionService {
 
     private final AppVersionRepository appVersionRepository;
     private final MiniAppRepository miniAppRepository;
-    private final WorkspaceMemberRepository workspaceMemberRepository;
+    private final WorkspaceAuthorizationService workspaceAuthorizationService;
     private final GcsService gcsService;
     private final Storage storage;
 
@@ -44,7 +43,7 @@ public class AppVersionService {
         MiniApp miniApp = miniAppRepository.findById(request.miniAppId())
                 .orElseThrow(() -> new EntityNotFoundException("MiniApp을 찾을 수 없습니다"));
 
-        validateWorkspaceMembership(miniApp.getWorkspace().getWorkspaceId(), publisherId);
+        workspaceAuthorizationService.validateMembership(miniApp.getWorkspace().getWorkspaceId(), publisherId);
 
         AppVersion version = AppVersion.builder()
                 .miniApp(miniApp)
@@ -121,14 +120,8 @@ public class AppVersionService {
         AppVersion version = appVersionRepository.findDetailedById(versionId)
                 .orElseThrow(() -> new EntityNotFoundException("AppVersion을 찾을 수 없습니다"));
 
-        validateWorkspaceMembership(version.getMiniApp().getWorkspace().getWorkspaceId(), publisherId);
+        workspaceAuthorizationService.validateMembership(version.getMiniApp().getWorkspace().getWorkspaceId(), publisherId);
 
         return version;
-    }
-
-    private void validateWorkspaceMembership(UUID workspaceId, UUID publisherId) {
-        if (!workspaceMemberRepository.existsByWorkspace_WorkspaceIdAndPublisher_PublisherId(workspaceId, publisherId)) {
-            throw new UnauthorizedAccessException("해당 워크스페이스의 멤버가 아닙니다");
-        }
     }
 }

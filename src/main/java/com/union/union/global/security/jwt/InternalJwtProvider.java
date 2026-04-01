@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -22,6 +23,7 @@ import java.util.UUID;
 public class InternalJwtProvider {
 
     private static final String EXPECTED_ISSUER = "union-dashboard";
+    private static final Set<String> ALLOWED_ROLES = Set.of("ROLE_PUBLISHER", "ROLE_ADMIN");
 
     private final SecretKey key;
 
@@ -43,7 +45,12 @@ public class InternalJwtProvider {
 
     public boolean validateToken(String token) {
         try {
-            parseClaims(token);
+            Claims claims = parseClaims(token);
+            String role = claims.get("role", String.class);
+            if (!ALLOWED_ROLES.contains(role)) {
+                log.warn("Internal JWT with disallowed role: {}", role);
+                return false;
+            }
             return true;
         } catch (ExpiredJwtException e) {
             log.debug("Expired internal JWT token");

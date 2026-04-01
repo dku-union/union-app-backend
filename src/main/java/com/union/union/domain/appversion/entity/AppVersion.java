@@ -66,8 +66,8 @@ public class AppVersion extends BaseEntity {
     }
 
     public void submitForReview() {
-        if (this.status != VersionStatus.UPLOADED) {
-            throw new ConflictException("UPLOADED 상태에서만 심사를 요청할 수 있습니다");
+        if (this.status != VersionStatus.UPLOADED && this.status != VersionStatus.REJECTED) {
+            throw new ConflictException("UPLOADED 또는 REJECTED 상태에서만 심사를 요청할 수 있습니다");
         }
         if (this.testedAt == null) {
             throw new ConflictException("최소 1회 테스트 후 심사를 요청할 수 있습니다");

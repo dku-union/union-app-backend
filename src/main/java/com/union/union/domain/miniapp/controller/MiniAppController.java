@@ -5,16 +5,20 @@ import com.union.union.domain.miniapp.dto.MiniAppResponseDto;
 import com.union.union.domain.miniapp.service.MiniAppService;
 import com.union.union.global.security.jwt.JwtUserPrincipal;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+@Validated
 @RestController
 @RequestMapping("/mini-apps")
 @RequiredArgsConstructor
@@ -41,7 +45,7 @@ public class MiniAppController {
 
     @GetMapping("/popular")
     public ResponseEntity<List<MiniAppResponseDto>> getPopularMiniApps(
-            @RequestParam(defaultValue = "10") int limit
+            @RequestParam(defaultValue = "10") @Min(1) @Max(50) int limit
     ) {
         List<MiniAppResponseDto> response = miniAppService.getPopularMiniApps(limit);
         return ResponseEntity.ok(response);
@@ -60,9 +64,7 @@ public class MiniAppController {
             @PathVariable Long id,
             @AuthenticationPrincipal JwtUserPrincipal principal
     ) {
-        UUID userId = principal != null ? principal.userId() : null;
-        String bundleUrl = miniAppService.getLaunchUrl(id, userId);
-
+        String bundleUrl = miniAppService.getLaunchUrl(id, principal.userId());
         return ResponseEntity.ok(Map.of("bundleUrl", bundleUrl));
     }
 
