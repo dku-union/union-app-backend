@@ -57,13 +57,14 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/v1/apps/**", "/mini-apps").permitAll()
 
                 // MiniApp endpoints
-                .requestMatchers(HttpMethod.GET, "/mini-apps/*/launch").authenticated()
+                .requestMatchers(HttpMethod.POST, "/mini-apps/*/launch").authenticated()
                 .requestMatchers(HttpMethod.POST, "/mini-apps").hasRole("PUBLISHER")
                 .requestMatchers(HttpMethod.PATCH, "/mini-apps/*/approve").hasRole("ADMIN")
 
                 // Publisher endpoints
-                .requestMatchers(HttpMethod.POST, "/publishers/apply").authenticated()
-                .requestMatchers(HttpMethod.PATCH, "/publishers/*/approve").hasRole("ADMIN")
+                // TODO: Publisher apply/approve는 NextAuth 기반으로 전환됨
+                // .requestMatchers(HttpMethod.POST, "/publishers/apply").authenticated()
+                // .requestMatchers(HttpMethod.PATCH, "/publishers/*/approve").hasRole("ADMIN")
 
                 // Admin endpoints
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
