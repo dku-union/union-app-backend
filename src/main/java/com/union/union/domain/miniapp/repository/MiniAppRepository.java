@@ -10,16 +10,23 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface MiniAppRepository extends JpaRepository<MiniApp, Long> {
 
-    @EntityGraph(attributePaths = {"publisher", "university"})
-    @Query("SELECT m FROM MiniApp m WHERE m.status = :status AND (:universityId IS NULL OR m.university.id = :universityId)")
-    List<MiniApp> findByStatusAndUniversityId(@Param("status") MiniAppStatus status, @Param("universityId") Long universityId);
+    @Override
+    @EntityGraph(attributePaths = {"workspace"})
+    Optional<MiniApp> findById(Long id);
 
-    @EntityGraph(attributePaths = {"publisher", "university"})
+    @EntityGraph(attributePaths = {"workspace"})
+    List<MiniApp> findByStatus(MiniAppStatus status);
+
+    // TODO: 대학교별 필터링 (university 확정 후 구현)
+    // List<MiniApp> findByStatusAndUniversityId(MiniAppStatus status, Long universityId);
+
+    @EntityGraph(attributePaths = {"workspace"})
     @Query("SELECT m FROM MiniApp m " +
            "LEFT JOIN MiniAppUsage u ON m.id = u.miniAppId " +
            "WHERE m.status = :status " +
@@ -27,10 +34,10 @@ public interface MiniAppRepository extends JpaRepository<MiniApp, Long> {
            "ORDER BY COUNT(u) DESC")
     List<MiniApp> findPopularMiniApps(@Param("status") MiniAppStatus status, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"publisher", "university"})
-    List<MiniApp> findByPublisherId(UUID publisherId);
+    @EntityGraph(attributePaths = {"workspace"})
+    List<MiniApp> findByWorkspace_WorkspaceId(UUID workspaceId);
 
-    @EntityGraph(attributePaths = {"publisher", "university"})
+    @EntityGraph(attributePaths = {"workspace"})
     @Query("SELECT m FROM MiniApp m " +
            "JOIN MiniAppUsage u ON m.id = u.miniAppId " +
            "JOIN User user ON u.userId = user.id " +
@@ -40,7 +47,7 @@ public interface MiniAppRepository extends JpaRepository<MiniApp, Long> {
            "ORDER BY COUNT(u) DESC")
     List<MiniApp> findRecommendedByUniversity(@Param("universityName") String universityName, @Param("status") MiniAppStatus status, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"publisher", "university"})
+    @EntityGraph(attributePaths = {"workspace"})
     @Query("SELECT m FROM MiniApp m " +
            "JOIN MiniAppUsage u ON m.id = u.miniAppId " +
            "WHERE u.userId = :userId " +
@@ -49,7 +56,4 @@ public interface MiniAppRepository extends JpaRepository<MiniApp, Long> {
            "ORDER BY MAX(u.timestamp) DESC")
     List<MiniApp> findRecentByUser(@Param("userId") UUID userId, @Param("status") MiniAppStatus status, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"publisher", "university"})
-    @Query("SELECT m FROM MiniApp m WHERE m.id = :id")
-    java.util.Optional<MiniApp> findDetailsById(@Param("id") Long id);
 }

@@ -13,15 +13,14 @@ import java.util.UUID;
 @Repository
 public interface AppVersionRepository extends JpaRepository<AppVersion, UUID> {
 
-    @EntityGraph(attributePaths = {"miniApp", "publisher"})
+    @EntityGraph(attributePaths = {"miniApp", "miniApp.workspace"})
     List<AppVersion> findByMiniAppIdOrderByCreatedAtDesc(Long miniAppId);
 
-    @EntityGraph(attributePaths = {"miniApp", "publisher"})
-    List<AppVersion> findByPublisherIdOrderByCreatedAtDesc(UUID publisherId);
-
-    @EntityGraph(attributePaths = {"miniApp", "publisher"})
+    @EntityGraph(attributePaths = {"miniApp", "miniApp.workspace"})
     List<AppVersion> findByStatus(VersionStatus status);
 
-    @EntityGraph(attributePaths = {"miniApp", "publisher"})
+    @EntityGraph(attributePaths = {"miniApp", "miniApp.workspace"})
     Optional<AppVersion> findDetailedById(UUID id);
+
+    Optional<AppVersion> findFirstByMiniAppIdAndStatusOrderByCreatedAtDesc(Long miniAppId, VersionStatus status);
 }
