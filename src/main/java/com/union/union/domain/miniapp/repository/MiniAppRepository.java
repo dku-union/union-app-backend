@@ -1,6 +1,7 @@
 package com.union.union.domain.miniapp.repository;
 
 import com.union.union.domain.miniapp.entity.MiniApp;
+import com.union.union.domain.miniapp.entity.MiniAppCategory;
 import com.union.union.domain.miniapp.entity.MiniAppStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -55,5 +56,22 @@ public interface MiniAppRepository extends JpaRepository<MiniApp, Long> {
            "GROUP BY m.id " +
            "ORDER BY MAX(u.timestamp) DESC")
     List<MiniApp> findRecentByUser(@Param("userId") UUID userId, @Param("status") MiniAppStatus status, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"workspace"})
+    @Query("SELECT m FROM MiniApp m " +
+           "WHERE m.status = :status " +
+           "ORDER BY m.id DESC")
+    List<MiniApp> findNewMiniApps(@Param("status") MiniAppStatus status, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"workspace"})
+    @Query("SELECT m FROM MiniApp m " +
+           "WHERE m.status = :status AND (" +
+           "LOWER(m.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(m.description) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(m.tags) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    List<MiniApp> searchByKeyword(@Param("keyword") String keyword, @Param("status") MiniAppStatus status, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"workspace"})
+    List<MiniApp> findByCategoryAndStatus(MiniAppCategory category, MiniAppStatus status, Pageable pageable);
 
 }

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -37,5 +38,15 @@ public class RedisService {
     // 키 존재 여부 확인
     public boolean hasKey(String key) {
         return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+    }
+
+    // ZSET: score 증가 (검색어 우선순위 누적)
+    public void incrementScore(String key, String value, double delta) {
+        redisTemplate.opsForZSet().incrementScore(key, value, delta);
+    }
+
+    // ZSET: 상위 N개 추출 (인기 검색어 조회)
+    public Set<Object> getTopRanks(String key, int limit) {
+        return redisTemplate.opsForZSet().reverseRange(key, 0, Math.max(0, limit - 1));
     }
 }

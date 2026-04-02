@@ -116,6 +116,23 @@ public class AppVersionService {
         return AppVersionResponseDto.from(version);
     }
 
+    @Transactional
+    public AppVersionResponseDto deploy(UUID versionId, UUID publisherId) {
+        AppVersion version = getVersionWithOwnerCheck(versionId, publisherId);
+        
+        version.deploy();
+        
+        // Ensure parent MiniApp becomes AVAILABLE/APPROVED when its version goes live for the first time
+        MiniApp miniApp = version.getMiniApp();
+        if (miniApp.getStatus() != com.union.union.domain.miniapp.entity.MiniAppStatus.APPROVED) {
+            miniApp.approve();
+        }
+
+        log.info("AppVersion 배포 완료 (DEPLOYED). versionId={}, miniAppId={}", versionId, miniApp.getId());
+        
+        return AppVersionResponseDto.from(version);
+    }
+
     private AppVersion getVersionWithOwnerCheck(UUID versionId, UUID publisherId) {
         AppVersion version = appVersionRepository.findDetailedById(versionId)
                 .orElseThrow(() -> new EntityNotFoundException("AppVersion을 찾을 수 없습니다"));
