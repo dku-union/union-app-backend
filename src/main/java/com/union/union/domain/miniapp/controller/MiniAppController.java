@@ -5,17 +5,20 @@ import com.union.union.domain.miniapp.dto.MiniAppResponseDto;
 import com.union.union.domain.miniapp.service.MiniAppService;
 import com.union.union.global.security.jwt.JwtUserPrincipal;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
+@Validated
 @RestController
 @RequestMapping("/mini-apps")
 @RequiredArgsConstructor
@@ -34,16 +37,15 @@ public class MiniAppController {
     }
 
     @GetMapping
-    public ResponseEntity<List<MiniAppResponseDto>> getMiniApps(
-            @RequestParam(required = false) Long universityId
-    ) {
-        List<MiniAppResponseDto> response = miniAppService.getApprovedMiniApps(universityId);
+    public ResponseEntity<List<MiniAppResponseDto>> getMiniApps() {
+        // TODO: 대학교별 필터링 (university 확정 후 구현)
+        List<MiniAppResponseDto> response = miniAppService.getApprovedMiniApps();
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/popular")
     public ResponseEntity<List<MiniAppResponseDto>> getPopularMiniApps(
-            @RequestParam(defaultValue = "10") int limit
+            @RequestParam(defaultValue = "10") @Min(1) @Max(50) int limit
     ) {
         List<MiniAppResponseDto> response = miniAppService.getPopularMiniApps(limit);
         return ResponseEntity.ok(response);
@@ -57,17 +59,13 @@ public class MiniAppController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/{id}/launch")
-    public ResponseEntity<Void> launch(
+    @PostMapping("/{id}/launch")
+    public ResponseEntity<Map<String, String>> launch(
             @PathVariable Long id,
             @AuthenticationPrincipal JwtUserPrincipal principal
     ) {
-        UUID userId = principal != null ? principal.userId() : null;
-        String launchUrl = miniAppService.getLaunchUrl(id, userId);
-        
-        return ResponseEntity.status(HttpStatus.SEE_OTHER)
-                .location(URI.create(launchUrl))
-                .build();
+        String bundleUrl = miniAppService.getLaunchUrl(id, principal.userId());
+        return ResponseEntity.ok(Map.of("bundleUrl", bundleUrl));
     }
 
 }

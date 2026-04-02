@@ -55,6 +55,9 @@ jwt:
   access-token-expiration: 1800000     # 30분
   refresh-token-expiration: 1209600000  # 14일
 
+internal-jwt:
+  secret: ${INTERNAL_JWT_SECRET:default-internal-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256}
+
 careernet:
   api:
     key: ${CAREERNET_API_KEY}

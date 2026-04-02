@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -17,6 +18,7 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
+    private final InternalJwtProvider internalJwtProvider;
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
@@ -29,9 +31,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
         String token = resolveToken(request);
 
-        if (token != null && jwtProvider.validateToken(token)) {
-            var authentication = jwtProvider.getAuthentication(token);
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+        if (token != null) {
+            Authentication authentication = null;
+
+            // 1. User JWT 검증 (iOS 앱 사용자)
+            if (jwtProvider.validateToken(token)) {
+                authentication = jwtProvider.getAuthentication(token);
+            }
+            // 2. Internal JWT 검증 (Next.js BFF → Spring)
+            else if (internalJwtProvider.validateToken(token)) {
+                authentication = internalJwtProvider.getAuthentication(token);
+            }
+
+            if (authentication != null) {
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
         }
 
         filterChain.doFilter(request, response);

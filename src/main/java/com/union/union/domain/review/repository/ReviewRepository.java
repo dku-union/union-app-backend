@@ -13,13 +13,13 @@ import java.util.UUID;
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, UUID> {
 
-    @EntityGraph(attributePaths = {"version", "version.miniApp", "version.publisher", "reviewer"})
+    @EntityGraph(attributePaths = {"version", "version.miniApp", "version.miniApp.workspace", "reviewer"})
     List<Review> findByVerdictOrderByCreatedAtAsc(Verdict verdict);
 
     Optional<Review> findByVersionId(UUID versionId);
 
     boolean existsByVersionIdAndVerdict(UUID versionId, Verdict verdict);
 
-    @EntityGraph(attributePaths = {"version", "version.miniApp", "version.publisher", "reviewer"})
+    @EntityGraph(attributePaths = {"version", "version.miniApp", "version.miniApp.workspace", "reviewer"})
     Optional<Review> findDetailedById(UUID id);
 }

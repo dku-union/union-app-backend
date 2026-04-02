@@ -1,7 +1,10 @@
 package com.union.union.domain.miniapp.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+
+import java.util.UUID;
 
 public record MiniAppRegisterRequestDto(
     @NotBlank(message = "앱 이름은 필수입니다")
@@ -13,10 +16,7 @@ public record MiniAppRegisterRequestDto(
     @Size(max = 500, message = "아이콘 URL은 500자 이내여야 합니다")
     String iconUrl,
 
-    @NotBlank(message = "실행 URL은 필수입니다")
-    @Size(max = 500, message = "실행 URL은 500자 이내여야 합니다")
-    String launchUrl,
-
-    Long universityId
+    @NotNull(message = "워크스페이스 ID는 필수입니다")
+    UUID workspaceId
 ) {
 }

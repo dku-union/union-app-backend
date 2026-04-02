@@ -1,7 +1,6 @@
 package com.union.union.domain.miniapp.entity;
 
-import com.union.union.domain.university.entity.UniversityDomain;
-import com.union.union.domain.user.entity.User;
+import com.union.union.domain.workspace.entity.Workspace;
 import com.union.union.global.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -25,30 +24,22 @@ public class MiniApp extends BaseEntity {
     @Column(length = 500)
     private String iconUrl;
 
-    @Column(nullable = false, length = 500)
-    private String launchUrl;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "publisher_id", nullable = false)
-    private User publisher;
+    @JoinColumn(name = "workspace_id", nullable = false)
+    private Workspace workspace;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "university_id")
-    private UniversityDomain university;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private MiniAppStatus status;
 
     @Builder
-    public MiniApp(String name, String description, String iconUrl, String launchUrl, 
-                   User publisher, UniversityDomain university, MiniAppStatus status) {
+    public MiniApp(String name, String description, String iconUrl, Workspace workspace, MiniAppStatus status) {
         this.name = name;
         this.description = description;
         this.iconUrl = iconUrl;
-        this.launchUrl = launchUrl;
-        this.publisher = publisher;
-        this.university = university;
+        this.workspace = workspace;
         this.status = status != null ? status : MiniAppStatus.PENDING;
     }
 

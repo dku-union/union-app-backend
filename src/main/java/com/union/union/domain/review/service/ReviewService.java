@@ -4,16 +4,18 @@ import com.union.union.domain.appversion.entity.AppVersion;
 import com.union.union.domain.appversion.repository.AppVersionRepository;
 import com.union.union.domain.review.dto.ReviewDecisionRequestDto;
 import com.union.union.domain.review.dto.ReviewResponseDto;
+import com.union.union.domain.publisher.entity.Publisher;
+import com.union.union.domain.publisher.repository.PublisherRepository;
 import com.union.union.domain.review.entity.Review;
 import com.union.union.domain.review.entity.Verdict;
 import com.union.union.domain.review.repository.ReviewRepository;
-import com.union.union.domain.user.entity.User;
-import com.union.union.domain.user.repository.UserRepository;
+import com.union.union.domain.workspace.service.WorkspaceAuthorizationService;
 import com.union.union.global.common.exception.ConflictException;
 import com.union.union.global.common.exception.EntityNotFoundException;
-import com.union.union.global.common.exception.UnauthorizedAccessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,16 +31,16 @@ public class ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final AppVersionRepository appVersionRepository;
-    private final UserRepository userRepository;
+    private final PublisherRepository publisherRepository;
+    private final WorkspaceAuthorizationService workspaceAuthorizationService;
 
     @Transactional
     public ReviewResponseDto submitForReview(UUID versionId, UUID publisherId) {
         AppVersion version = appVersionRepository.findDetailedById(versionId)
                 .orElseThrow(() -> new EntityNotFoundException("AppVersion을 찾을 수 없습니다"));
 
-        if (!version.getPublisher().getId().equals(publisherId)) {
-            throw new UnauthorizedAccessException("본인의 버전만 심사 요청할 수 있습니다");
-        }
+        workspaceAuthorizationService.validateMembership(
+                version.getMiniApp().getWorkspace().getWorkspaceId(), publisherId);
 
         if (reviewRepository.existsByVersionIdAndVerdict(versionId, Verdict.PENDING)) {
             throw new ConflictException("이미 심사가 진행 중인 버전입니다");
@@ -71,11 +73,15 @@ public class ReviewService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "miniApps", allEntries = true),
+            @CacheEvict(value = "popularMiniApps", allEntries = true)
+    })
     public ReviewResponseDto decide(UUID reviewId, ReviewDecisionRequestDto request, UUID adminId) {
         Review review = reviewRepository.findDetailedById(reviewId)
                 .orElseThrow(() -> new EntityNotFoundException("Review를 찾을 수 없습니다"));
 
-        User admin = userRepository.findById(adminId)
+        Publisher admin = publisherRepository.findByPublisherId(adminId)
                 .orElseThrow(() -> new EntityNotFoundException("관리자를 찾을 수 없습니다"));
 
         review.decide(admin, request.verdict(), request.reason());
