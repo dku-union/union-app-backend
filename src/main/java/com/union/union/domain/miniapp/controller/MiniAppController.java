@@ -1,10 +1,6 @@
 package com.union.union.domain.miniapp.controller;
 
-import com.union.union.domain.miniapp.dto.DiscoveryResponseDto;
-import com.union.union.domain.miniapp.dto.MiniAppLiteDto;
-import com.union.union.domain.miniapp.dto.MiniAppRegisterRequestDto;
-import com.union.union.domain.miniapp.dto.MiniAppResponseDto;
-import com.union.union.domain.miniapp.entity.MiniAppCategory;
+import com.union.union.domain.miniapp.dto.*;
 import com.union.union.domain.miniapp.service.MiniAppSearchService;
 import com.union.union.domain.miniapp.service.MiniAppService;
 import com.union.union.global.security.jwt.JwtUserPrincipal;
@@ -93,12 +89,12 @@ public class MiniAppController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/category/{category}")
+    @GetMapping("/category/{categoryId}")
     public ResponseEntity<List<MiniAppLiteDto>> getMiniAppsByCategory(
-            @PathVariable MiniAppCategory category,
+            @PathVariable Long categoryId,
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        List<MiniAppLiteDto> response = miniAppSearchService.searchByCategory(category, pageable);
+        List<MiniAppLiteDto> response = miniAppSearchService.searchByCategory(categoryId, pageable);
         return ResponseEntity.ok(response);
     }
 

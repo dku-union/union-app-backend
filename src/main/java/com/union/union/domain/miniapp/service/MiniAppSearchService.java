@@ -3,6 +3,7 @@ package com.union.union.domain.miniapp.service;
 import com.union.union.domain.miniapp.dto.MiniAppLiteDto;
 import com.union.union.domain.miniapp.entity.MiniAppCategory;
 import com.union.union.domain.miniapp.entity.MiniAppStatus;
+import com.union.union.domain.miniapp.repository.MiniAppCategoryRepository;
 import com.union.union.domain.miniapp.repository.MiniAppRepository;
 import com.union.union.global.infra.redis.RedisService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 public class MiniAppSearchService {
 
     private final MiniAppRepository miniAppRepository;
+    private final MiniAppCategoryRepository miniAppCategoryRepository;
     private final RedisService redisService;
     
     private static final String SEARCH_TRENDING_KEY = "search:trending";
@@ -38,7 +40,10 @@ public class MiniAppSearchService {
                 .collect(Collectors.toList());
     }
 
-    public List<MiniAppLiteDto> searchByCategory(MiniAppCategory category, Pageable pageable) {
+    public List<MiniAppLiteDto> searchByCategory(Long categoryId, Pageable pageable) {
+        MiniAppCategory category = miniAppCategoryRepository.findById(categoryId)
+                .orElseThrow(() -> new com.union.union.global.common.exception.EntityNotFoundException("카테고리를 찾을 수 없습니다"));
+
         return miniAppRepository.findByCategoryAndStatus(category, MiniAppStatus.APPROVED, pageable)
                 .stream()
                 .map(MiniAppLiteDto::from)
