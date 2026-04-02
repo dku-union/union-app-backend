@@ -3,9 +3,12 @@ package com.union.union.domain.miniapp.service;
 import com.union.union.domain.appversion.entity.AppVersion;
 import com.union.union.domain.appversion.entity.VersionStatus;
 import com.union.union.domain.appversion.repository.AppVersionRepository;
+import com.union.union.domain.miniapp.dto.DiscoveryResponseDto;
+import com.union.union.domain.miniapp.dto.MiniAppLiteDto;
 import com.union.union.domain.miniapp.dto.MiniAppRegisterRequestDto;
 import com.union.union.domain.miniapp.dto.MiniAppResponseDto;
 import com.union.union.domain.miniapp.entity.MiniApp;
+import com.union.union.domain.miniapp.entity.MiniAppCategory;
 import com.union.union.domain.miniapp.entity.MiniAppStatus;
 import com.union.union.domain.miniapp.repository.MiniAppRepository;
 import com.union.union.domain.miniapp.usage.dto.MiniAppUsageStatsDto;
@@ -46,6 +49,7 @@ public class MiniAppService {
     private final MiniAppUsageRepository miniAppUsageRepository;
     private final AppVersionRepository appVersionRepository;
     private final GcsService gcsService;
+    private final MiniAppSearchService miniAppSearchService;
 
     @Transactional
     @CacheEvict(value = "miniApps", allEntries = true)
@@ -114,6 +118,44 @@ public class MiniAppService {
 
         return combined.values().stream()
                 .map(MiniAppResponseDto::from)
+                .collect(Collectors.toList());
+    }
+
+    public DiscoveryResponseDto getDiscoveryData(UUID userId) {
+        List<MiniAppLiteDto> recentApps = getRecentApps(userId);
+        List<MiniAppLiteDto> popularApps = getPopularAppsCache();
+        List<MiniAppLiteDto> newApps = getNewAppsCache();
+        
+        // Fetch real-time trending keywords from Redis (top 4)
+        List<String> trendingKeywords = miniAppSearchService.getPopularKeywords(4);
+        List<MiniAppCategory> categories = java.util.Arrays.asList(MiniAppCategory.values());
+
+        return new DiscoveryResponseDto(recentApps, popularApps, newApps, trendingKeywords, categories);
+    }
+
+    private List<MiniAppLiteDto> getRecentApps(UUID userId) {
+        if (userId == null) {
+            return java.util.Collections.emptyList();
+        }
+        return miniAppRepository.findRecentByUser(userId, MiniAppStatus.APPROVED, PageRequest.of(0, 5))
+                .stream()
+                .map(MiniAppLiteDto::from)
+                .collect(Collectors.toList());
+    }
+
+    @Cacheable(value = "discovery_popular", sync = true)
+    public List<MiniAppLiteDto> getPopularAppsCache() {
+        return miniAppRepository.findPopularMiniApps(MiniAppStatus.APPROVED, PageRequest.of(0, 10))
+                .stream()
+                .map(MiniAppLiteDto::from)
+                .collect(Collectors.toList());
+    }
+
+    @Cacheable(value = "discovery_new", sync = true)
+    public List<MiniAppLiteDto> getNewAppsCache() {
+        return miniAppRepository.findNewMiniApps(MiniAppStatus.APPROVED, PageRequest.of(0, 10))
+                .stream()
+                .map(MiniAppLiteDto::from)
                 .collect(Collectors.toList());
     }
 

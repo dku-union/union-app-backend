@@ -24,6 +24,12 @@ public class MiniApp extends BaseEntity {
     @Column(length = 500)
     private String iconUrl;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 50)
+    private MiniAppCategory category;
+
+    @Column(length = 200)
+    private String tags;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "workspace_id", nullable = false)
@@ -35,10 +41,12 @@ public class MiniApp extends BaseEntity {
     private MiniAppStatus status;
 
     @Builder
-    public MiniApp(String name, String description, String iconUrl, Workspace workspace, MiniAppStatus status) {
+    public MiniApp(String name, String description, String iconUrl, MiniAppCategory category, String tags, Workspace workspace, MiniAppStatus status) {
         this.name = name;
         this.description = description;
         this.iconUrl = iconUrl;
+        this.category = category != null ? category : MiniAppCategory.ETC;
+        this.tags = tags;
         this.workspace = workspace;
         this.status = status != null ? status : MiniAppStatus.PENDING;
     }

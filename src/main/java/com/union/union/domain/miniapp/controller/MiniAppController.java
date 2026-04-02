@@ -1,13 +1,19 @@
 package com.union.union.domain.miniapp.controller;
 
+import com.union.union.domain.miniapp.dto.DiscoveryResponseDto;
+import com.union.union.domain.miniapp.dto.MiniAppLiteDto;
 import com.union.union.domain.miniapp.dto.MiniAppRegisterRequestDto;
 import com.union.union.domain.miniapp.dto.MiniAppResponseDto;
+import com.union.union.domain.miniapp.entity.MiniAppCategory;
+import com.union.union.domain.miniapp.service.MiniAppSearchService;
 import com.union.union.domain.miniapp.service.MiniAppService;
 import com.union.union.global.security.jwt.JwtUserPrincipal;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,6 +31,7 @@ import java.util.UUID;
 public class MiniAppController {
 
     private final MiniAppService miniAppService;
+    private final MiniAppSearchService miniAppSearchService;
 
     @PostMapping
     @PreAuthorize("hasRole('PUBLISHER')")
@@ -68,4 +75,35 @@ public class MiniAppController {
         return ResponseEntity.ok(Map.of("bundleUrl", bundleUrl));
     }
 
+    @GetMapping("/discovery")
+    public ResponseEntity<DiscoveryResponseDto> getDiscoveryApps(
+            @AuthenticationPrincipal JwtUserPrincipal principal
+    ) {
+        UUID userId = principal != null ? principal.userId() : null;
+        DiscoveryResponseDto response = miniAppService.getDiscoveryData(userId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<MiniAppLiteDto>> searchMiniApps(
+            @RequestParam String keyword,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        List<MiniAppLiteDto> response = miniAppSearchService.searchByKeyword(keyword, pageable);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/category/{category}")
+    public ResponseEntity<List<MiniAppLiteDto>> getMiniAppsByCategory(
+            @PathVariable MiniAppCategory category,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        List<MiniAppLiteDto> response = miniAppSearchService.searchByCategory(category, pageable);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/search/popular")
+    public ResponseEntity<List<String>> getPopularKeywords() {
+        return ResponseEntity.ok(miniAppSearchService.getPopularKeywords(5));
+    }
 }

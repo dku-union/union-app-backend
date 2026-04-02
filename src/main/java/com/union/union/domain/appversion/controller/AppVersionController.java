@@ -77,4 +77,14 @@ public class AppVersionController {
         AppVersionResponseDto response = appVersionService.getVersion(id);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/{id}/deploy")
+    @PreAuthorize("hasRole('PUBLISHER')")
+    public ResponseEntity<AppVersionResponseDto> deploy(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal JwtUserPrincipal principal
+    ) {
+        AppVersionResponseDto response = appVersionService.deploy(id, principal.userId());
+        return ResponseEntity.ok(response);
+    }
 }
