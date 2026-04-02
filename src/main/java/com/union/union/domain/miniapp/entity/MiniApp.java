@@ -24,8 +24,8 @@ public class MiniApp extends BaseEntity {
     @Column(length = 500)
     private String iconUrl;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
     private MiniAppCategory category;
 
     @Column(length = 200)
@@ -45,7 +45,7 @@ public class MiniApp extends BaseEntity {
         this.name = name;
         this.description = description;
         this.iconUrl = iconUrl;
-        this.category = category != null ? category : MiniAppCategory.ETC;
+        this.category = category;
         this.tags = tags;
         this.workspace = workspace;
         this.status = status != null ? status : MiniAppStatus.PENDING;

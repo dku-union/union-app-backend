@@ -74,4 +74,8 @@ public interface MiniAppRepository extends JpaRepository<MiniApp, Long> {
     @EntityGraph(attributePaths = {"workspace"})
     List<MiniApp> findByCategoryAndStatus(MiniAppCategory category, MiniAppStatus status, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"workspace"})
+    @Query(value = "SELECT * FROM mini_apps WHERE status = 'APPROVED' ORDER BY RANDOM() LIMIT :limit", nativeQuery = true)
+    List<MiniApp> findRandomMiniApps(@Param("limit") int limit);
+
 }

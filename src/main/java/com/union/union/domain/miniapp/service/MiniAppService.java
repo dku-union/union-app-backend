@@ -3,13 +3,11 @@ package com.union.union.domain.miniapp.service;
 import com.union.union.domain.appversion.entity.AppVersion;
 import com.union.union.domain.appversion.entity.VersionStatus;
 import com.union.union.domain.appversion.repository.AppVersionRepository;
-import com.union.union.domain.miniapp.dto.DiscoveryResponseDto;
-import com.union.union.domain.miniapp.dto.MiniAppLiteDto;
-import com.union.union.domain.miniapp.dto.MiniAppRegisterRequestDto;
-import com.union.union.domain.miniapp.dto.MiniAppResponseDto;
+import com.union.union.domain.miniapp.dto.*;
 import com.union.union.domain.miniapp.entity.MiniApp;
 import com.union.union.domain.miniapp.entity.MiniAppCategory;
 import com.union.union.domain.miniapp.entity.MiniAppStatus;
+import com.union.union.domain.miniapp.repository.MiniAppCategoryRepository;
 import com.union.union.domain.miniapp.repository.MiniAppRepository;
 import com.union.union.domain.miniapp.usage.dto.MiniAppUsageStatsDto;
 import com.union.union.domain.miniapp.usage.dto.PublisherStatisticsResponseDto;
@@ -43,6 +41,7 @@ import java.util.stream.Collectors;
 public class MiniAppService {
 
     private final MiniAppRepository miniAppRepository;
+    private final MiniAppCategoryRepository miniAppCategoryRepository;
     private final UserRepository userRepository;
     private final WorkspaceRepository workspaceRepository;
     private final WorkspaceAuthorizationService workspaceAuthorizationService;
@@ -59,10 +58,14 @@ public class MiniAppService {
 
         workspaceAuthorizationService.validateMembership(workspace.getWorkspaceId(), publisherId);
 
+        MiniAppCategory category = miniAppCategoryRepository.findById(request.categoryId())
+                .orElseThrow(() -> new EntityNotFoundException("카테고리를 찾을 수 없습니다"));
+
         MiniApp miniApp = MiniApp.builder()
                 .name(request.name())
                 .description(request.description())
                 .iconUrl(request.iconUrl())
+                .category(category)
                 .workspace(workspace)
                 .status(MiniAppStatus.PENDING)
                 .build();
@@ -125,12 +128,17 @@ public class MiniAppService {
         List<MiniAppLiteDto> recentApps = getRecentApps(userId);
         List<MiniAppLiteDto> popularApps = getPopularAppsCache();
         List<MiniAppLiteDto> newApps = getNewAppsCache();
+        List<MiniAppLiteDto> recommendedApps = getRecommendedAppsCache();
         
         // Fetch real-time trending keywords from Redis (top 4)
         List<String> trendingKeywords = miniAppSearchService.getPopularKeywords(4);
-        List<MiniAppCategory> categories = java.util.Arrays.asList(MiniAppCategory.values());
+        
+        List<MiniAppCategoryResponseDto> categories = miniAppCategoryRepository.findByIsActiveTrue()
+                .stream()
+                .map(MiniAppCategoryResponseDto::from)
+                .collect(Collectors.toList());
 
-        return new DiscoveryResponseDto(recentApps, popularApps, newApps, trendingKeywords, categories);
+        return new DiscoveryResponseDto(recentApps, popularApps, newApps, recommendedApps, trendingKeywords, categories);
     }
 
     private List<MiniAppLiteDto> getRecentApps(UUID userId) {
@@ -154,6 +162,15 @@ public class MiniAppService {
     @Cacheable(value = "discovery_new", sync = true)
     public List<MiniAppLiteDto> getNewAppsCache() {
         return miniAppRepository.findNewMiniApps(MiniAppStatus.APPROVED, PageRequest.of(0, 10))
+                .stream()
+                .map(MiniAppLiteDto::from)
+                .collect(Collectors.toList());
+    }
+
+    @Cacheable(value = "discovery_recommended", sync = true)
+    public List<MiniAppLiteDto> getRecommendedAppsCache() {
+        // Placeholder: Currently returns 5 random apps as requested
+        return miniAppRepository.findRandomMiniApps(5)
                 .stream()
                 .map(MiniAppLiteDto::from)
                 .collect(Collectors.toList());

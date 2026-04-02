@@ -1,13 +1,13 @@
 package com.union.union.domain.miniapp.dto;
 
-import com.union.union.domain.miniapp.entity.MiniAppCategory;
+
 
 public record MiniAppLiteDto(
         Long id,
         String name,
         String iconUrl,
         String publisherName,
-        MiniAppCategory category,
+        MiniAppCategoryResponseDto category,
         Double rating
 ) {
     public static MiniAppLiteDto from(com.union.union.domain.miniapp.entity.MiniApp miniApp) {
@@ -16,7 +16,7 @@ public record MiniAppLiteDto(
                 miniApp.getName(),
                 miniApp.getIconUrl(),
                 miniApp.getWorkspace() != null ? miniApp.getWorkspace().getName() : "Union Dev",
-                miniApp.getCategory(),
+                miniApp.getCategory() != null ? MiniAppCategoryResponseDto.from(miniApp.getCategory()) : null,
                 4.5 // Mock rating for now
         );
     }

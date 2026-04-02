@@ -17,6 +17,9 @@ public record MiniAppRegisterRequestDto(
     String iconUrl,
 
     @NotNull(message = "워크스페이스 ID는 필수입니다")
-    UUID workspaceId
+    UUID workspaceId,
+
+    @NotNull(message = "카테고리 ID는 필수입니다")
+    Long categoryId
 ) {
 }
