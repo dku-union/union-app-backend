@@ -15,6 +15,8 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 @EnableCaching
@@ -49,14 +51,28 @@ public class RedisConfig {
 
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(5)) // 기본 TTL 5분
+        RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
+                .entryTtl(Duration.ofMinutes(5))
                 .disableCachingNullValues()
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
 
+        // 캐시별 TTL 개별 설정
+        Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
+
+        // 미니앱 목록 캐시 (기존)
+        cacheConfigurations.put("miniApps",        defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        cacheConfigurations.put("popularMiniApps", defaultConfig.entryTtl(Duration.ofMinutes(5)));
+
+        // Analytics: appId 검증 캐시 (5분 — 앱 승인 상태 변경 반영 주기)
+        cacheConfigurations.put("analyticsAppId",  defaultConfig.entryTtl(Duration.ofMinutes(5)));
+
+        // Analytics: 요약 집계 캐시 (5분 — 대시보드 실시간성 vs DB 부하 균형)
+        cacheConfigurations.put("analyticsSummary", defaultConfig.entryTtl(Duration.ofMinutes(5)));
+
         return RedisCacheManager.builder(connectionFactory)
-                .cacheDefaults(config)
+                .cacheDefaults(defaultConfig)
+                .withInitialCacheConfigurations(cacheConfigurations)
                 .build();
     }
 }

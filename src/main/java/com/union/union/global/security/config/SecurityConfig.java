@@ -55,6 +55,12 @@ public class SecurityConfig {
                 .requestMatchers("/auth/email/**").permitAll()
                 .requestMatchers("/api/v1/universities/**").permitAll()
 
+                // Analytics endpoints
+                // POST /events: iOS/Android 네이티브 앱 (User JWT, ROLE_USER)
+                .requestMatchers(HttpMethod.POST, "/api/v1/analytics/events").authenticated()
+                // GET summary/events: 퍼블리셔 대시보드 (@PreAuthorize 로 세부 인가)
+                .requestMatchers(HttpMethod.GET, "/api/v1/analytics/**").authenticated()
+
                 // MiniApp endpoints
                 .requestMatchers(HttpMethod.POST, "/mini-apps/*/launch").authenticated()
                 .requestMatchers(HttpMethod.POST, "/mini-apps").hasRole("PUBLISHER")

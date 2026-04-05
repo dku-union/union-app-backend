@@ -40,6 +40,14 @@ public class MiniApp extends BaseEntity {
     @Column(nullable = false, length = 20)
     private MiniAppStatus status;
 
+    /**
+     * 미니앱 식별자 (reverse-domain, e.g. "com.union.soccer").
+     * union.config.json 의 appId 와 동일. Analytics 이벤트 매핑 키.
+     * 기존 앱은 null 허용, 신규 앱은 non-null.
+     */
+    @Column(name = "app_id", unique = true, length = 100)
+    private String appId;
+
     @Builder
     public MiniApp(String name, String description, String iconUrl, MiniAppCategory category, String tags, Workspace workspace, MiniAppStatus status) {
         this.name = name;
@@ -51,11 +59,15 @@ public class MiniApp extends BaseEntity {
         this.status = status != null ? status : MiniAppStatus.PENDING;
     }
 
+    public void updateAppId(String appId) {
+        this.appId = appId;
+    }
+
     public void approve() {
         this.status = MiniAppStatus.APPROVED;
     }
 
-public void reject() {
+    public void reject() {
         this.status = MiniAppStatus.REJECTED;
     }
 }
