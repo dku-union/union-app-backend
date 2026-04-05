@@ -49,4 +49,9 @@ public class RedisService {
     public Set<Object> getTopRanks(String key, int limit) {
         return redisTemplate.opsForZSet().reverseRange(key, 0, Math.max(0, limit - 1));
     }
+
+    // 키 만료 시간 설정 (이미 존재하는 키의 TTL 갱신)
+    public void setExpire(String key, Duration timeout) {
+        redisTemplate.expire(key, timeout);
+    }
 }

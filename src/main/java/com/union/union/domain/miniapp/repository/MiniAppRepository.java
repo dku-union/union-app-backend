@@ -70,4 +70,21 @@ public interface MiniAppRepository extends JpaRepository<MiniApp, Long> {
 
     @Query("SELECT m FROM MiniApp m JOIN FETCH m.workspace WHERE m.status = 'APPROVED' ORDER BY FUNCTION('RANDOM')")
     List<MiniApp> findRandomMiniApps(Pageable pageable);
+
+    // ──────────────────────────────────────────────────────────────
+    // Analytics 연동
+    // ──────────────────────────────────────────────────────────────
+
+    /**
+     * appId (reverse-domain) 로 미니앱 조회.
+     * Analytics 이벤트 수신 시 앱 검증에 사용.
+     */
+    @Query("SELECT m FROM MiniApp m JOIN FETCH m.workspace WHERE m.appId = :appId")
+    java.util.Optional<MiniApp> findByAppId(@org.springframework.data.repository.query.Param("appId") String appId);
+
+    /**
+     * appId + status 조합으로 존재 여부 확인 (count 쿼리, 경량).
+     * Analytics 이벤트 수신 시 APPROVED 앱 여부 검증에 사용.
+     */
+    boolean existsByAppIdAndStatus(String appId, MiniAppStatus status);
 }
