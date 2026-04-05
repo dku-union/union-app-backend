@@ -55,6 +55,7 @@ public class AppVersionController {
     }
 
     @GetMapping("/{id}/bundle")
+    @PreAuthorize("hasRole('PUBLISHER') or hasRole('ADMIN')")
     public ResponseEntity<Map<String, String>> getBundleUrl(
             @PathVariable UUID id
     ) {

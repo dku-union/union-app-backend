@@ -45,3 +45,4 @@ out/
 src/main/resources/application-local.yml
 *.log
 *-key.json
+dump.rdb

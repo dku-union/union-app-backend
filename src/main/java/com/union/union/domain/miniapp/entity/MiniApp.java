@@ -24,14 +24,14 @@ public class MiniApp extends BaseEntity {
     @Column(length = 500)
     private String iconUrl;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "category_id", nullable = false)
     private MiniAppCategory category;
 
     @Column(length = 200)
     private String tags;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "workspace_id", nullable = false)
     private Workspace workspace;
 

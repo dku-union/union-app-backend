@@ -38,7 +38,7 @@ public class Workspace extends BaseEntity {
     @Column(nullable = false, length = 20)
     private String color;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "owner_id", referencedColumnName = "publisher_id", nullable = false)
     private Publisher owner;
 

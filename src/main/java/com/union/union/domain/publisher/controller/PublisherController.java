@@ -3,9 +3,12 @@ package com.union.union.domain.publisher.controller;
 import com.union.union.domain.miniapp.dto.MiniAppResponseDto;
 import com.union.union.domain.miniapp.service.MiniAppService;
 import com.union.union.domain.miniapp.usage.dto.PublisherStatisticsResponseDto;
+import com.union.union.domain.workspace.service.WorkspaceAuthorizationService;
+import com.union.union.global.security.jwt.JwtUserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,12 +20,15 @@ import java.util.UUID;
 public class PublisherController {
 
     private final MiniAppService miniAppService;
+    private final WorkspaceAuthorizationService workspaceAuthorizationService;
 
     @GetMapping("/me/mini-apps")
     @PreAuthorize("hasRole('PUBLISHER')")
     public ResponseEntity<List<MiniAppResponseDto>> getMyMiniApps(
-            @RequestParam UUID workspaceId
+            @RequestParam UUID workspaceId,
+            @AuthenticationPrincipal JwtUserPrincipal principal
     ) {
+        workspaceAuthorizationService.validateMembership(workspaceId, principal.userId());
         List<MiniAppResponseDto> response = miniAppService.getMiniAppsByWorkspace(workspaceId);
         return ResponseEntity.ok(response);
     }
@@ -30,8 +36,10 @@ public class PublisherController {
     @GetMapping("/me/statistics")
     @PreAuthorize("hasRole('PUBLISHER')")
     public ResponseEntity<PublisherStatisticsResponseDto> getStatistics(
-            @RequestParam UUID workspaceId
+            @RequestParam UUID workspaceId,
+            @AuthenticationPrincipal JwtUserPrincipal principal
     ) {
+        workspaceAuthorizationService.validateMembership(workspaceId, principal.userId());
         PublisherStatisticsResponseDto response = miniAppService.getWorkspaceStatistics(workspaceId);
         return ResponseEntity.ok(response);
     }

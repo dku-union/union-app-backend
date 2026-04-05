@@ -8,6 +8,7 @@ import com.union.union.domain.appversion.dto.CreateVersionResponseDto;
 import com.union.union.domain.appversion.entity.AppVersion;
 import com.union.union.domain.appversion.repository.AppVersionRepository;
 import com.union.union.domain.miniapp.entity.MiniApp;
+import com.union.union.domain.miniapp.entity.MiniAppStatus;
 import com.union.union.domain.miniapp.repository.MiniAppRepository;
 import com.union.union.domain.workspace.service.WorkspaceAuthorizationService;
 import com.union.union.global.common.exception.ConflictException;
@@ -53,7 +54,7 @@ public class AppVersionService {
 
         appVersionRepository.save(version);
 
-        String filename = String.format("mini-apps/%s/versions/%s/%s-%s.unionapp",
+        String filename = String.format("%s/versions/%s/%s-%s.unionapp",
                 miniApp.getId(), version.getId(), miniApp.getName(), request.versionNumber());
         var signedUrlResponse = gcsService.getMiniAppSignedUrl(publisherId, filename);
 
@@ -66,8 +67,8 @@ public class AppVersionService {
     public AppVersionResponseDto confirmUpload(UUID versionId, UUID publisherId) {
         AppVersion version = getVersionWithOwnerCheck(versionId, publisherId);
 
-        String objectPath = String.format("mini-apps/%s/versions/%s/%s-%s.unionapp",
-                version.getMiniApp().getId(), version.getId(),
+        String objectPath = String.format("mini-apps/%s/%s/versions/%s/%s-%s.unionapp",
+                publisherId, version.getMiniApp().getId(), version.getId(),
                 version.getMiniApp().getName(), version.getVersionNumber());
 
         Blob blob = storage.get(bucketName, objectPath);
@@ -124,7 +125,7 @@ public class AppVersionService {
         
         // Ensure parent MiniApp becomes AVAILABLE/APPROVED when its version goes live for the first time
         MiniApp miniApp = version.getMiniApp();
-        if (miniApp.getStatus() != com.union.union.domain.miniapp.entity.MiniAppStatus.APPROVED) {
+        if (miniApp.getStatus() != MiniAppStatus.APPROVED) {
             miniApp.approve();
         }
 

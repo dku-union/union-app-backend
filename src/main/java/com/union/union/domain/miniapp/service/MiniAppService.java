@@ -24,7 +24,6 @@ import com.union.union.global.infra.gcs.GcsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,6 +48,7 @@ public class MiniAppService {
     private final AppVersionRepository appVersionRepository;
     private final GcsService gcsService;
     private final MiniAppSearchService miniAppSearchService;
+    private final MiniAppCacheService miniAppCacheService;
 
     @Transactional
     @CacheEvict(value = "miniApps", allEntries = true)
@@ -126,9 +126,9 @@ public class MiniAppService {
 
     public DiscoveryResponseDto getDiscoveryData(UUID userId) {
         List<MiniAppLiteDto> recentApps = getRecentApps(userId);
-        List<MiniAppLiteDto> popularApps = getPopularAppsCache();
-        List<MiniAppLiteDto> newApps = getNewAppsCache();
-        List<MiniAppLiteDto> recommendedApps = getRecommendedAppsCache();
+        List<MiniAppLiteDto> popularApps = miniAppCacheService.getPopularAppsCache();
+        List<MiniAppLiteDto> newApps = miniAppCacheService.getNewAppsCache();
+        List<MiniAppLiteDto> recommendedApps = miniAppCacheService.getRecommendedAppsCache();
         
         // Fetch real-time trending keywords from Redis (top 4)
         List<String> trendingKeywords = miniAppSearchService.getPopularKeywords(4);
@@ -151,30 +151,6 @@ public class MiniAppService {
                 .collect(Collectors.toList());
     }
 
-    @Cacheable(value = "discovery_popular", sync = true)
-    public List<MiniAppLiteDto> getPopularAppsCache() {
-        return miniAppRepository.findPopularMiniApps(MiniAppStatus.APPROVED, PageRequest.of(0, 10))
-                .stream()
-                .map(MiniAppLiteDto::from)
-                .collect(Collectors.toList());
-    }
-
-    @Cacheable(value = "discovery_new", sync = true)
-    public List<MiniAppLiteDto> getNewAppsCache() {
-        return miniAppRepository.findNewMiniApps(MiniAppStatus.APPROVED, PageRequest.of(0, 10))
-                .stream()
-                .map(MiniAppLiteDto::from)
-                .collect(Collectors.toList());
-    }
-
-    @Cacheable(value = "discovery_recommended", sync = true)
-    public List<MiniAppLiteDto> getRecommendedAppsCache() {
-        // Placeholder: Currently returns 5 random apps as requested
-        return miniAppRepository.findRandomMiniApps(5)
-                .stream()
-                .map(MiniAppLiteDto::from)
-                .collect(Collectors.toList());
-    }
 
     public PublisherStatisticsResponseDto getWorkspaceStatistics(UUID workspaceId) {
         LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
@@ -192,6 +168,7 @@ public class MiniAppService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public String getLaunchUrl(Long id, UUID userId) {
         MiniApp miniApp = miniAppRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("MiniApp을 찾을 수 없습니다"));

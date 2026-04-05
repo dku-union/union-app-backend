@@ -20,7 +20,7 @@ public class AppVersion extends BaseEntity {
     @Column(columnDefinition = "uuid")
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "mini_app_id", nullable = false)
     private MiniApp miniApp;
 
