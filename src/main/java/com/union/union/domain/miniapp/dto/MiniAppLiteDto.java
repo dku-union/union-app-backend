@@ -5,6 +5,7 @@ package com.union.union.domain.miniapp.dto;
 public record MiniAppLiteDto(
         Long id,
         String name,
+        String appId,
         String iconUrl,
         String publisherName,
         MiniAppCategoryResponseDto category,
@@ -14,6 +15,7 @@ public record MiniAppLiteDto(
         return new MiniAppLiteDto(
                 miniApp.getId(),
                 miniApp.getName(),
+                miniApp.getAppId(),
                 miniApp.getIconUrl(),
                 miniApp.getWorkspace() != null ? miniApp.getWorkspace().getName() : "Union Dev",
                 miniApp.getCategory() != null ? MiniAppCategoryResponseDto.from(miniApp.getCategory()) : null,
