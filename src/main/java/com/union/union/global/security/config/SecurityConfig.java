@@ -61,7 +61,16 @@ public class SecurityConfig {
                 // GET summary/events: 퍼블리셔 대시보드 (@PreAuthorize 로 세부 인가)
                 .requestMatchers(HttpMethod.GET, "/api/v1/analytics/**").authenticated()
 
-                // MiniApp endpoints
+                // MiniApp endpoints (Public)
+                .requestMatchers(HttpMethod.GET, "/mini-apps").permitAll()
+                .requestMatchers(HttpMethod.GET, "/mini-apps/popular").permitAll()
+                .requestMatchers(HttpMethod.GET, "/mini-apps/discovery").permitAll()
+                .requestMatchers(HttpMethod.GET, "/mini-apps/search/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/mini-apps/search/click").permitAll()
+                .requestMatchers(HttpMethod.GET, "/mini-apps/category/**").permitAll()
+
+                // MiniApp endpoints (Authenticated)
+                .requestMatchers(HttpMethod.GET, "/mini-apps/recommendations").authenticated()
                 .requestMatchers(HttpMethod.POST, "/mini-apps/*/launch").authenticated()
                 .requestMatchers(HttpMethod.POST, "/mini-apps").hasRole("PUBLISHER")
                 .requestMatchers(HttpMethod.PATCH, "/mini-apps/*/approve").hasRole("ADMIN")

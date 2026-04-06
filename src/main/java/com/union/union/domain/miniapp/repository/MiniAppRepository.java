@@ -65,6 +65,10 @@ public interface MiniAppRepository extends JpaRepository<MiniApp, Long> {
            "LOWER(m.tags) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     List<MiniApp> searchByKeyword(@Param("keyword") String keyword, @Param("status") MiniAppStatus status, Pageable pageable);
 
+    @Query("SELECT m FROM MiniApp m JOIN FETCH m.workspace " +
+           "WHERE m.status = :status AND m.searchableName LIKE CONCAT(:prefix, '%')")
+    List<MiniApp> findByStatusAndSearchableNameStartingWith(@Param("status") MiniAppStatus status, @Param("prefix") String prefix, Pageable pageable);
+
     @Query("SELECT m FROM MiniApp m JOIN FETCH m.workspace WHERE m.category = :category AND m.status = :status")
     List<MiniApp> findByCategoryAndStatus(@Param("category") MiniAppCategory category, @Param("status") MiniAppStatus status, Pageable pageable);
 

@@ -125,6 +125,19 @@ public class MiniAppService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 모든 미니앱의 searchableName을 동기화합니다. (데이터 마이그레이션용)
+     */
+    @Transactional
+    public void syncAllSearchableNames() {
+        List<MiniApp> allApps = miniAppRepository.findAll();
+        for (MiniApp app : allApps) {
+            app.syncSearchableName();
+        }
+        miniAppRepository.saveAll(allApps);
+        log.info("모든 미니앱의 searchableName 동기화 완료. 건수={}", allApps.size());
+    }
+
     public DiscoveryResponseDto getDiscoveryData(UUID userId) {
         List<MiniAppLiteDto> recentApps = getRecentApps(userId);
         List<MiniAppLiteDto> popularApps = miniAppCacheService.getPopularAppsCache();
@@ -188,5 +201,4 @@ public class MiniAppService {
 
         return gcsService.getCdnDownloadUrl(deployedVersion.getBuildFileUrl());
     }
-
 }
