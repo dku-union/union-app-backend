@@ -1,5 +1,6 @@
 package com.union.union.global.infra.gcs;
 
+import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.HttpMethod;
 import com.google.cloud.storage.Storage;
@@ -11,6 +12,9 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
@@ -52,6 +56,19 @@ public class GcsService {
         String downloadUrl = getCdnDownloadUrl(blobName);
 
         return new GcsSignedUrlResponseDto(signedUrl.toString(), downloadUrl);
+    }
+
+    /**
+     * 서버에서 직접 GCS에 파일 업로드 (dev seed 전용)
+     * @return GCS object path (buildFileUrl로 저장)
+     */
+    public String uploadFile(MultipartFile file, String objectPath) throws IOException {
+        BlobId blobId = BlobId.of(bucketName, objectPath);
+        BlobInfo blobInfo = BlobInfo.newBuilder(blobId)
+                .setContentType(file.getContentType() != null ? file.getContentType() : "application/octet-stream")
+                .build();
+        storage.create(blobInfo, file.getBytes());
+        return objectPath;
     }
 
     /**

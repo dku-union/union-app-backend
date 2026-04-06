@@ -2,6 +2,8 @@ package com.union.union.domain.auth.controller;
 
 import com.union.union.domain.appversion.entity.AppVersion;
 import com.union.union.domain.appversion.repository.AppVersionRepository;
+import com.union.union.domain.dev.dto.DevSeedResponseDto;
+import com.union.union.domain.dev.service.DevSeedService;
 import com.union.union.domain.miniapp.entity.MiniApp;
 import com.union.union.domain.miniapp.entity.MiniAppCategory;
 import com.union.union.domain.miniapp.entity.MiniAppStatus;
@@ -18,12 +20,18 @@ import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -45,6 +53,7 @@ public class DevSeedController {
     private final MiniAppRepository miniAppRepository;
     private final AppVersionRepository appVersionRepository;
     private final EntityManager entityManager;
+    private final DevSeedService devSeedService;
 
     private static final UUID TEST_PUBLISHER_ID = UUID.fromString("66d1bf78-29b5-45d8-bba7-f08f88bffa23");
     private static final UUID TEST_WORKSPACE_ID = UUID.fromString("77d1bf78-29b5-45d8-bba7-f08f88bffa23");
@@ -121,6 +130,32 @@ public class DevSeedController {
 
         log.info("[Seed] 완료 — 미니앱 {}개 준비됨", createdApps.size());
         return ResponseEntity.ok(result);
+    }
+
+    /**
+     * POST /api/dev/seed/app
+     *
+     * 실제 파일을 업로드하여 가상의 Publisher → Workspace → MiniApp → AppVersion(DEPLOYED)을 한 번에 생성합니다.
+     * Content-Type: multipart/form-data
+     */
+    @PostMapping(value = "/seed/app", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<DevSeedResponseDto> seedApp(
+            @RequestParam("appName") String appName,
+            @RequestParam("appId") String appId,
+            @RequestParam("description") String description,
+            @RequestParam("categoryName") String categoryName,
+            @RequestParam(value = "tags", defaultValue = "") String tags,
+            @RequestParam(value = "versionNumber", defaultValue = "1.0.0") String versionNumber,
+            @RequestParam(value = "releaseNotes", defaultValue = "Initial release") String releaseNotes,
+            @RequestParam(value = "iconUrl", required = false) String iconUrl,
+            @RequestParam(value = "publisherName", required = false) String publisherName,
+            @RequestPart("file") MultipartFile file
+    ) throws IOException {
+        DevSeedResponseDto response = devSeedService.seed(
+                appName, appId, description, categoryName, tags,
+                versionNumber, releaseNotes, iconUrl, publisherName, file
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     // ── helpers ──────────────────────────────────────────────
