@@ -86,8 +86,29 @@ public class MiniAppController {
             @RequestParam String keyword,
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        List<MiniAppLiteDto> response = miniAppSearchService.searchByKeyword(keyword, pageable);
+        // Full 검색 시점에 인기 검색어 집계 (intent tracking)
+        List<MiniAppLiteDto> response = miniAppSearchService.searchWithIntent(keyword, pageable);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/search/preview")
+    public ResponseEntity<List<MiniAppLiteDto>> previewMiniApps(
+            @RequestParam String keyword,
+            @PageableDefault(size = 10) Pageable pageable
+    ) {
+        // 실시간 미리보기 (집계 안함, 자음/모음 단위 매칭)
+        List<MiniAppLiteDto> response = miniAppSearchService.searchPreview(keyword, pageable);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/search/click")
+    public ResponseEntity<Void> recordSearchClick(
+            @RequestParam(required = false) String keyword,
+            @RequestParam String appName
+    ) {
+        // 검색 키워드와 클릭한 앱 이름을 모두 인기 검색어 점수에 반영 (사용자 니즈 + 결과 인기 통합)
+        miniAppSearchService.recordClick(keyword, appName);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/category/{categoryId}")

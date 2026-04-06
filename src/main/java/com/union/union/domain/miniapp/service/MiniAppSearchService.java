@@ -28,13 +28,26 @@ public class MiniAppSearchService {
     
     private static final String SEARCH_TRENDING_KEY = "search:trending";
 
-    public List<MiniAppLiteDto> searchByKeyword(String keyword, Pageable pageable) {
+    public List<MiniAppLiteDto> searchWithIntent(String keyword, Pageable pageable) {
         if (keyword != null && !keyword.trim().isEmpty()) {
-            // Redis ZSet에 검색어 랭크 반영 (실시간 트렌딩 누적)
+            // Full Search (Submit) 시점에 점수 올림 (User Intent 포착)
             redisService.incrementScore(SEARCH_TRENDING_KEY, keyword.trim(), 1.0);
         }
 
         return miniAppRepository.searchByKeyword(keyword, MiniAppStatus.APPROVED, pageable)
+                .stream()
+                .map(MiniAppLiteDto::from)
+                .collect(Collectors.toList());
+    }
+
+    public List<MiniAppLiteDto> searchPreview(String keyword, Pageable pageable) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+
+        String jamoPrefix = com.union.union.domain.miniapp.utils.KoreanUtils.decompose(keyword.trim().toLowerCase());
+
+        return miniAppRepository.findByStatusAndSearchableNameStartingWith(MiniAppStatus.APPROVED, jamoPrefix, pageable)
                 .stream()
                 .map(MiniAppLiteDto::from)
                 .collect(Collectors.toList());
@@ -48,6 +61,18 @@ public class MiniAppSearchService {
                 .stream()
                 .map(MiniAppLiteDto::from)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 검색 결과 클릭 시 검색 키워드와 실제 앱 이름을 모두 인기 검색어 점수에 반영합니다.
+     */
+    public void recordClick(String keyword, String appName) {
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            redisService.incrementScore(SEARCH_TRENDING_KEY, keyword.trim(), 1.0);
+        }
+        if (appName != null && !appName.trim().isEmpty()) {
+            redisService.incrementScore(SEARCH_TRENDING_KEY, appName.trim(), 1.0);
+        }
     }
 
     public List<String> getPopularKeywords(int limit) {

@@ -48,8 +48,11 @@ public class MiniApp extends BaseEntity {
     @Column(name = "app_id", unique = true, length = 100)
     private String appId;
 
+    @Column(name = "searchable_name", length = 300)
+    private String searchableName;
+
     @Builder
-    public MiniApp(String name, String description, String iconUrl, MiniAppCategory category, String tags, Workspace workspace, MiniAppStatus status) {
+    public MiniApp(String name, String description, String iconUrl, MiniAppCategory category, String tags, Workspace workspace, MiniAppStatus status, String appId) {
         this.name = name;
         this.description = description;
         this.iconUrl = iconUrl;
@@ -57,6 +60,15 @@ public class MiniApp extends BaseEntity {
         this.tags = tags;
         this.workspace = workspace;
         this.status = status != null ? status : MiniAppStatus.PENDING;
+        this.appId = appId;
+    }
+
+    @PrePersist
+    @PreUpdate
+    public void syncSearchableName() {
+        if (this.name != null) {
+            this.searchableName = com.union.union.domain.miniapp.utils.KoreanUtils.decompose(this.name);
+        }
     }
 
     public void updateAppId(String appId) {
