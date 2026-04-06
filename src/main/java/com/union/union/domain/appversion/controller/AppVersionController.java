@@ -25,7 +25,7 @@ public class AppVersionController {
     private final AppVersionService appVersionService;
 
     @PostMapping
-    @PreAuthorize("hasRole('PUBLISHER')")
+    @PreAuthorize("hasRole('PUBLISHER') or hasRole('ADMIN')")
     public ResponseEntity<CreateVersionResponseDto> createVersion(
             @Valid @RequestBody CreateVersionRequestDto request,
             @AuthenticationPrincipal JwtUserPrincipal principal
@@ -35,7 +35,7 @@ public class AppVersionController {
     }
 
     @PostMapping("/{id}/confirm")
-    @PreAuthorize("hasRole('PUBLISHER')")
+    @PreAuthorize("hasRole('PUBLISHER') or hasRole('ADMIN')")
     public ResponseEntity<AppVersionResponseDto> confirmUpload(
             @PathVariable UUID id,
             @AuthenticationPrincipal JwtUserPrincipal principal
@@ -45,7 +45,7 @@ public class AppVersionController {
     }
 
     @PostMapping("/{id}/test-complete")
-    @PreAuthorize("hasRole('PUBLISHER')")
+    @PreAuthorize("hasRole('PUBLISHER') or hasRole('ADMIN')")
     public ResponseEntity<AppVersionResponseDto> markTested(
             @PathVariable UUID id,
             @AuthenticationPrincipal JwtUserPrincipal principal
@@ -64,7 +64,7 @@ public class AppVersionController {
     }
 
     @GetMapping("/mini-app/{miniAppId}")
-    @PreAuthorize("hasRole('PUBLISHER')")
+    @PreAuthorize("hasRole('PUBLISHER') or hasRole('ADMIN')")
     public ResponseEntity<List<AppVersionResponseDto>> getVersionsByMiniApp(
             @PathVariable Long miniAppId
     ) {
@@ -80,7 +80,7 @@ public class AppVersionController {
     }
 
     @PostMapping("/{id}/deploy")
-    @PreAuthorize("hasRole('PUBLISHER')")
+    @PreAuthorize("hasRole('PUBLISHER') or hasRole('ADMIN')")
     public ResponseEntity<AppVersionResponseDto> deploy(
             @PathVariable UUID id,
             @AuthenticationPrincipal JwtUserPrincipal principal
