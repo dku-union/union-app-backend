@@ -4,8 +4,8 @@ import com.union.union.domain.appversion.entity.AppVersion;
 import com.union.union.domain.appversion.repository.AppVersionRepository;
 import com.union.union.domain.review.dto.ReviewDecisionRequestDto;
 import com.union.union.domain.review.dto.ReviewResponseDto;
-import com.union.union.domain.publisher.entity.Publisher;
-import com.union.union.domain.publisher.repository.PublisherRepository;
+import com.union.union.domain.user.entity.User;
+import com.union.union.domain.user.repository.UserRepository;
 import com.union.union.domain.review.entity.Review;
 import com.union.union.domain.review.entity.Verdict;
 import com.union.union.domain.review.repository.ReviewRepository;
@@ -31,7 +31,7 @@ public class ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final AppVersionRepository appVersionRepository;
-    private final PublisherRepository publisherRepository;
+    private final UserRepository userRepository;
     private final WorkspaceAuthorizationService workspaceAuthorizationService;
 
     @Transactional
@@ -81,7 +81,7 @@ public class ReviewService {
         Review review = reviewRepository.findDetailedById(reviewId)
                 .orElseThrow(() -> new EntityNotFoundException("Review를 찾을 수 없습니다"));
 
-        Publisher admin = publisherRepository.findByPublisherId(adminId)
+        User admin = userRepository.findById(adminId)
                 .orElseThrow(() -> new EntityNotFoundException("관리자를 찾을 수 없습니다"));
 
         review.decide(admin, request.verdict(), request.reason());

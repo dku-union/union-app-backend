@@ -25,7 +25,7 @@ public record ReviewResponseDto(
             review.getVersion().getVersionNumber(),
             review.getVersion().getMiniApp().getName(),
             review.getVersion().getMiniApp().getWorkspace().getName(),
-            review.getReviewer() != null ? review.getReviewer().getName() : null,
+            review.getReviewer() != null ? review.getReviewer().getNickname() : null,
             review.getVerdict(),
             review.getReason(),
             review.getCreatedAt(),

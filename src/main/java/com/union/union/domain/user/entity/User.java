@@ -76,7 +76,7 @@ public class User extends BaseEntity {
     }
 
     public enum Role {
-        ROLE_USER, ROLE_TESTER
+        ROLE_USER, ROLE_TESTER, ROLE_ADMIN
     }
 
     public enum UserStatus {

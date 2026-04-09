@@ -3,6 +3,8 @@ package com.union.union.domain.appversion.controller;
 import com.union.union.domain.appversion.dto.AppVersionResponseDto;
 import com.union.union.domain.appversion.dto.CreateVersionRequestDto;
 import com.union.union.domain.appversion.dto.CreateVersionResponseDto;
+import com.union.union.domain.appversion.dto.TestLinkResponseDto;
+import com.union.union.domain.appversion.dto.TestBundleResponseDto;
 import com.union.union.domain.appversion.service.AppVersionService;
 import com.union.union.global.security.jwt.JwtUserPrincipal;
 import jakarta.validation.Valid;
@@ -23,6 +25,25 @@ import java.util.UUID;
 public class AppVersionController {
 
     private final AppVersionService appVersionService;
+
+    @GetMapping("/{id}/test-link")
+    @PreAuthorize("hasRole('PUBLISHER') or hasRole('ADMIN')")
+    public ResponseEntity<TestLinkResponseDto> getTestLink(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal JwtUserPrincipal principal
+    ) {
+        TestLinkResponseDto response = appVersionService.generateTestLink(id, principal.userId());
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/test-bundle")
+    public ResponseEntity<TestBundleResponseDto> getTestBundle(
+            @RequestParam String token,
+            @AuthenticationPrincipal JwtUserPrincipal principal
+    ) {
+        TestBundleResponseDto response = appVersionService.getTestBundleByToken(token, principal.userId());
+        return ResponseEntity.ok(response);
+    }
 
     @PostMapping
     @PreAuthorize("hasRole('PUBLISHER') or hasRole('ADMIN')")
