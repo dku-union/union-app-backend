@@ -37,6 +37,7 @@ public class AppVersionController {
     }
 
     @GetMapping("/test-bundle")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<TestBundleResponseDto> getTestBundle(
             @RequestParam String token,
             @AuthenticationPrincipal JwtUserPrincipal principal
