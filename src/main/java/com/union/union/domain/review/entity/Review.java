@@ -1,7 +1,7 @@
 package com.union.union.domain.review.entity;
 
 import com.union.union.domain.appversion.entity.AppVersion;
-import com.union.union.domain.publisher.entity.Publisher;
+import com.union.union.domain.user.entity.User;
 import com.union.union.global.common.entity.BaseEntity;
 import com.union.union.global.common.exception.BadRequestException;
 import com.union.union.global.common.exception.ConflictException;
@@ -15,11 +15,12 @@ import java.util.UUID;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "reviews")
+@AttributeOverride(name = "createdAt", column = @Column(name = "submitted_at"))
 public class Review extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid")
+    @Column(name = "review_id", columnDefinition = "uuid")
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -27,8 +28,8 @@ public class Review extends BaseEntity {
     private AppVersion version;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reviewer_id", referencedColumnName = "publisher_id")
-    private Publisher reviewer;
+    @JoinColumn(name = "reviewer_id")
+    private User reviewer;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -45,7 +46,7 @@ public class Review extends BaseEntity {
         this.verdict = Verdict.PENDING;
     }
 
-    public void decide(Publisher reviewer, Verdict verdict, String reason) {
+    public void decide(User reviewer, Verdict verdict, String reason) {
         if (this.verdict != Verdict.PENDING) {
             throw new ConflictException("이미 처리된 심사입니다");
         }
