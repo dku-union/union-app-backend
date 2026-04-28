@@ -26,9 +26,9 @@ public class AppVersionController {
 
     private final AppVersionService appVersionService;
 
-    @GetMapping("/{id}/test-link")
+    @PostMapping("/{id}/test-session")
     @PreAuthorize("hasRole('PUBLISHER') or hasRole('ADMIN')")
-    public ResponseEntity<TestLinkResponseDto> getTestLink(
+    public ResponseEntity<TestLinkResponseDto> createTestSession(
             @PathVariable UUID id,
             @AuthenticationPrincipal JwtUserPrincipal principal
     ) {
