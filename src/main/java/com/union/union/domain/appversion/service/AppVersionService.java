@@ -152,7 +152,7 @@ public class AppVersionService {
             throw new ConflictException("아직 업로드되지 않은 버전입니다");
         }
 
-        return gcsService.getCdnDownloadUrl(version.getBuildFileUrl());
+        return String.format("%s?versionId=%s", universalLinkBaseUrl, versionId);
     }
 
     public List<AppVersionResponseDto> getVersionsByMiniApp(Long miniAppId) {
