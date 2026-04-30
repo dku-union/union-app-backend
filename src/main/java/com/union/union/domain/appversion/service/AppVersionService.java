@@ -149,17 +149,6 @@ public class AppVersionService {
         return AppVersionResponseDto.from(version);
     }
 
-    public String getBundleDownloadUrl(UUID versionId) {
-        AppVersion version = appVersionRepository.findDetailedById(versionId)
-                .orElseThrow(() -> new EntityNotFoundException("AppVersion을 찾을 수 없습니다"));
-
-        if (version.getBuildFileUrl() == null) {
-            throw new ConflictException("아직 업로드되지 않은 버전입니다");
-        }
-
-        return String.format("%s?versionId=%s", universalLinkBaseUrl, versionId);
-    }
-
     public List<AppVersionResponseDto> getVersionsByMiniApp(Long miniAppId) {
         return appVersionRepository.findByMiniAppIdOrderByCreatedAtDesc(miniAppId)
                 .stream()

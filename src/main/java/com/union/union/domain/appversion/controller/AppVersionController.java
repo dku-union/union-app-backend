@@ -16,7 +16,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -74,15 +73,6 @@ public class AppVersionController {
     ) {
         AppVersionResponseDto response = appVersionService.markTested(id, principal.userId());
         return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/{id}/bundle")
-    @PreAuthorize("hasRole('PUBLISHER') or hasRole('ADMIN')")
-    public ResponseEntity<Map<String, String>> getBundleUrl(
-            @PathVariable UUID id
-    ) {
-        String downloadUrl = appVersionService.getBundleDownloadUrl(id);
-        return ResponseEntity.ok(Map.of("downloadUrl", downloadUrl));
     }
 
     @GetMapping("/mini-app/{miniAppId}")
