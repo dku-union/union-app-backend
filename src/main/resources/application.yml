@@ -86,3 +86,6 @@ rate-limit:
 
 token-cleanup:
   refresh-token-cron: ${REFRESH_TOKEN_CLEANUP_CRON:0 0 4 * * *}
+
+universal-link:
+  base-url: ${UNIVERSAL_LINK_BASE_URL:union-app://test-app}
