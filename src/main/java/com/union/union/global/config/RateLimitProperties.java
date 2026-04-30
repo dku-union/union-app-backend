@@ -14,6 +14,8 @@ public class RateLimitProperties {
     private final Limit signup = new Limit(5, 60);
     private final Limit emailSend = new Limit(3, 60);
     private final Limit emailVerify = new Limit(5, 60);
+    private final Limit publisherEmailSend = new Limit(3, 60);
+    private final Limit publisherEmailVerify = new Limit(5, 60);
 
     @Getter
     @Setter

@@ -75,6 +75,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
         if (path.equals("/auth/email/verify")) {
             return properties.getEmailVerify();
         }
+        if (path.equals("/api/v1/auth/publisher/email/send")) {
+            return properties.getPublisherEmailSend();
+        }
+        if (path.equals("/api/v1/auth/publisher/email/verify")) {
+            return properties.getPublisherEmailVerify();
+        }
 
         return null;
     }

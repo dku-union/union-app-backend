@@ -24,6 +24,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -156,6 +159,68 @@ public class DevSeedController {
                 versionNumber, releaseNotes, iconUrl, publisherName, file
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * 개발용 — 등록된 퍼블리셔 목록을 ID/이메일/상태와 함께 반환.
+     * iOS 퍼블리셔 로그인 검증 시 어떤 이메일로 발송 가능한지 빠르게 확인하기 위함.
+     */
+    @GetMapping("/publishers")
+    public ResponseEntity<List<Map<String, Object>>> listPublishers() {
+        List<Map<String, Object>> result = publisherRepository.findAll().stream()
+                .map(p -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("publisherId", p.getPublisherId());
+                    m.put("name", p.getName());
+                    m.put("email", p.getEmail());
+                    m.put("status", p.getPubstatus());
+                    m.put("role", p.getRole());
+                    return m;
+                })
+                .toList();
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * 개발용 — 퍼블리셔 이메일/상태를 임의로 갱신.
+     * iOS 로그인 검증 시 자기 이메일로 OTP를 받기 위해 사용한다.
+     */
+    @PatchMapping("/publishers/{publisherId}")
+    @Transactional
+    public ResponseEntity<Map<String, Object>> updatePublisher(
+            @PathVariable UUID publisherId,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String status
+    ) {
+        Publisher publisher = publisherRepository.findByPublisherId(publisherId)
+                .orElseThrow(() -> new IllegalArgumentException("publisher not found: " + publisherId));
+
+        if (email != null && !email.isBlank()) {
+            entityManager.createNativeQuery(
+                    "UPDATE publishers SET email = :email WHERE publisher_id = :pid"
+            )
+            .setParameter("email", email.trim().toLowerCase())
+            .setParameter("pid", publisherId)
+            .executeUpdate();
+        }
+        if (status != null && !status.isBlank()) {
+            entityManager.createNativeQuery(
+                    "UPDATE publishers SET pubstatus = :status WHERE publisher_id = :pid"
+            )
+            .setParameter("status", status.toUpperCase())
+            .setParameter("pid", publisherId)
+            .executeUpdate();
+        }
+        entityManager.flush();
+        entityManager.clear();
+
+        Publisher refreshed = publisherRepository.findByPublisherId(publisherId).orElseThrow();
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("publisherId", refreshed.getPublisherId());
+        result.put("name", refreshed.getName());
+        result.put("email", refreshed.getEmail());
+        result.put("status", refreshed.getPubstatus());
+        return ResponseEntity.ok(result);
     }
 
     // ── helpers ──────────────────────────────────────────────
