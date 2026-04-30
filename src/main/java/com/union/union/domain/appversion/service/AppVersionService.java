@@ -13,6 +13,7 @@ import com.union.union.domain.miniapp.entity.MiniApp;
 import com.union.union.domain.miniapp.entity.MiniAppStatus;
 import com.union.union.domain.miniapp.repository.MiniAppRepository;
 import com.union.union.domain.workspace.service.WorkspaceAuthorizationService;
+import com.union.union.global.common.exception.BadRequestException;
 import com.union.union.global.common.exception.ConflictException;
 import com.union.union.global.common.exception.EntityNotFoundException;
 import com.union.union.global.infra.gcs.GcsService;
@@ -49,6 +50,10 @@ public class AppVersionService {
 
     public TestLinkResponseDto generateTestLink(UUID versionId, UUID publisherId) {
         AppVersion version = getVersionWithOwnerCheck(versionId, publisherId);
+
+        if (version.getBuildFileUrl() == null) {
+            throw new BadRequestException("파일이 업로드되지 않은 버전입니다");
+        }
 
         String token = UUID.randomUUID().toString();
         String redisKey = "test-link:" + token;
