@@ -11,4 +11,5 @@ import java.util.UUID;
 public interface PublisherRepository extends JpaRepository<Publisher, Long> {
     Optional<Publisher> findByPublisherId(UUID publisherId);
     boolean existsByPublisherId(UUID publisherId);
+    Optional<Publisher> findByEmail(String email);
 }

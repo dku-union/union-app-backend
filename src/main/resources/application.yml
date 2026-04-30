@@ -83,6 +83,12 @@ rate-limit:
   email-verify:
     max-requests: 5
     window-seconds: 60
+  publisher-email-send:
+    max-requests: 3
+    window-seconds: 60
+  publisher-email-verify:
+    max-requests: 5
+    window-seconds: 60
 
 token-cleanup:
   refresh-token-cron: ${REFRESH_TOKEN_CLEANUP_CRON:0 0 4 * * *}

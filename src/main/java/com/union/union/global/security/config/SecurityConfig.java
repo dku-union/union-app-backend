@@ -54,6 +54,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/dev/**").permitAll()
                 .requestMatchers("/auth/email/**").permitAll()
                 .requestMatchers("/api/v1/universities/**").permitAll()
+                // Publisher 로그인은 permitAll, /logout만 인증 필요
+                .requestMatchers(HttpMethod.POST, "/api/v1/auth/publisher/email/send").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/auth/publisher/email/verify").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/auth/publisher/refresh").permitAll()
 
                 // Analytics endpoints
                 // POST /events: iOS/Android 네이티브 앱 (User JWT, ROLE_USER)
