@@ -21,6 +21,7 @@ import com.union.union.global.infra.redis.RedisService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -100,7 +101,9 @@ public class AppVersionService {
         MiniApp miniApp = miniAppRepository.findById(request.miniAppId())
                 .orElseThrow(() -> new EntityNotFoundException("MiniApp을 찾을 수 없습니다"));
 
-        workspaceAuthorizationService.validateMembership(miniApp.getWorkspace().getWorkspaceId(), publisherId);
+        if (!isAdmin()) {
+            workspaceAuthorizationService.validateMembership(miniApp.getWorkspace().getWorkspaceId(), publisherId);
+        }
 
         AppVersion version = AppVersion.builder()
                 .miniApp(miniApp)
@@ -194,8 +197,16 @@ public class AppVersionService {
         AppVersion version = appVersionRepository.findDetailedById(versionId)
                 .orElseThrow(() -> new EntityNotFoundException("AppVersion을 찾을 수 없습니다"));
 
-        workspaceAuthorizationService.validateMembership(version.getMiniApp().getWorkspace().getWorkspaceId(), publisherId);
+        if (!isAdmin()) {
+            workspaceAuthorizationService.validateMembership(version.getMiniApp().getWorkspace().getWorkspaceId(), publisherId);
+        }
 
         return version;
+    }
+
+    private boolean isAdmin() {
+        return SecurityContextHolder.getContext().getAuthentication()
+                .getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     }
 }
