@@ -1,7 +1,9 @@
 package com.union.union.domain.review.service;
 
+import com.union.union.domain.appversion.dto.TestLinkResponseDto;
 import com.union.union.domain.appversion.entity.AppVersion;
 import com.union.union.domain.appversion.repository.AppVersionRepository;
+import com.union.union.domain.appversion.service.AppVersionService;
 import com.union.union.domain.review.dto.ReviewDecisionRequestDto;
 import com.union.union.domain.review.dto.ReviewResponseDto;
 import com.union.union.domain.user.entity.User;
@@ -33,6 +35,7 @@ public class ReviewService {
     private final AppVersionRepository appVersionRepository;
     private final UserRepository userRepository;
     private final WorkspaceAuthorizationService workspaceAuthorizationService;
+    private final AppVersionService appVersionService;
 
     @Transactional
     public ReviewResponseDto submitForReview(UUID versionId, UUID publisherId) {
@@ -70,6 +73,12 @@ public class ReviewService {
         Review review = reviewRepository.findDetailedById(reviewId)
                 .orElseThrow(() -> new EntityNotFoundException("Review를 찾을 수 없습니다"));
         return ReviewResponseDto.from(review);
+    }
+
+    public TestLinkResponseDto getTestLinkForReview(UUID reviewId, UUID adminId) {
+        Review review = reviewRepository.findDetailedById(reviewId)
+                .orElseThrow(() -> new EntityNotFoundException("Review를 찾을 수 없습니다"));
+        return appVersionService.generateTestLink(review.getVersion().getId(), adminId);
     }
 
     @Transactional

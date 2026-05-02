@@ -1,5 +1,6 @@
 package com.union.union.domain.review.controller;
 
+import com.union.union.domain.appversion.dto.TestLinkResponseDto;
 import com.union.union.domain.review.dto.ReviewDecisionRequestDto;
 import com.union.union.domain.review.dto.ReviewResponseDto;
 import com.union.union.domain.review.dto.SubmitReviewRequestDto;
@@ -44,6 +45,16 @@ public class ReviewController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ReviewResponseDto> getReview(@PathVariable UUID id) {
         ReviewResponseDto response = reviewService.getReview(id);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{id}/test-link")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<TestLinkResponseDto> getTestLink(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal JwtUserPrincipal principal
+    ) {
+        TestLinkResponseDto response = reviewService.getTestLinkForReview(id, principal.userId());
         return ResponseEntity.ok(response);
     }
 
