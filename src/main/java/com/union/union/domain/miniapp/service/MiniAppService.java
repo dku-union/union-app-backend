@@ -182,6 +182,16 @@ public class MiniAppService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * publisher가 속한 모든 워크스페이스의 미니앱을 합쳐 반환 (iOS publisher 전용 페이지).
+     */
+    public List<MiniAppResponseDto> getMiniAppsByPublisher(UUID publisherId) {
+        return miniAppRepository.findByPublisherMembership(publisherId)
+                .stream()
+                .map(MiniAppResponseDto::from)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public String getLaunchUrl(Long id, UUID userId) {
         MiniApp miniApp = miniAppRepository.findById(id)
