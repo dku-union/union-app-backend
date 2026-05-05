@@ -25,9 +25,14 @@ public class PublisherController {
     @GetMapping("/me/mini-apps")
     @PreAuthorize("hasRole('PUBLISHER')")
     public ResponseEntity<List<MiniAppResponseDto>> getMyMiniApps(
-            @RequestParam UUID workspaceId,
+            @RequestParam(required = false) UUID workspaceId,
             @AuthenticationPrincipal JwtUserPrincipal principal
     ) {
+        if (workspaceId == null) {
+            // workspaceId 미지정 → publisher가 속한 모든 워크스페이스의 미니앱 반환
+            List<MiniAppResponseDto> response = miniAppService.getMiniAppsByPublisher(principal.userId());
+            return ResponseEntity.ok(response);
+        }
         workspaceAuthorizationService.validateMembership(workspaceId, principal.userId());
         List<MiniAppResponseDto> response = miniAppService.getMiniAppsByWorkspace(workspaceId);
         return ResponseEntity.ok(response);

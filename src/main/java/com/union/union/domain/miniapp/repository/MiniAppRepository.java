@@ -34,6 +34,17 @@ public interface MiniAppRepository extends JpaRepository<MiniApp, Long> {
     @Query("SELECT m FROM MiniApp m JOIN FETCH m.workspace WHERE m.workspace.workspaceId = :workspaceId")
     List<MiniApp> findByWorkspace_WorkspaceId(@Param("workspaceId") UUID workspaceId);
 
+    /**
+     * 특정 publisher가 멤버인 모든 워크스페이스의 미니앱을 조회.
+     * iOS publisher 전용 화면("내가 업로드 한 앱")에서 사용.
+     */
+    @Query("SELECT DISTINCT m FROM MiniApp m " +
+           "JOIN FETCH m.workspace w " +
+           "JOIN WorkspaceMember wm ON wm.workspace.workspaceId = w.workspaceId " +
+           "WHERE wm.publisher.publisherId = :publisherId " +
+           "ORDER BY m.id DESC")
+    List<MiniApp> findByPublisherMembership(@Param("publisherId") UUID publisherId);
+
     @Query("SELECT m FROM MiniApp m JOIN FETCH m.workspace " +
            "WHERE m.status = :status AND m.id IN (" +
            "  SELECT u.miniAppId FROM MiniAppUsage u " +
