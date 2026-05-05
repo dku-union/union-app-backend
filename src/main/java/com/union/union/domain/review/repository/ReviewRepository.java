@@ -18,6 +18,9 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
 
     Optional<Review> findByVersionId(UUID versionId);
 
+    @EntityGraph(attributePaths = {"version", "version.miniApp", "version.miniApp.workspace", "reviewer"})
+    Optional<Review> findDetailedByVersionIdAndVerdict(UUID versionId, Verdict verdict);
+
     boolean existsByVersionIdAndVerdict(UUID versionId, Verdict verdict);
 
     @EntityGraph(attributePaths = {"version", "version.miniApp", "version.miniApp.workspace", "reviewer"})
