@@ -2,6 +2,7 @@ package com.union.union.domain.review.service;
 
 import com.union.union.domain.appversion.dto.TestLinkResponseDto;
 import com.union.union.domain.appversion.entity.AppVersion;
+import com.union.union.domain.appversion.entity.VersionStatus;
 import com.union.union.domain.appversion.repository.AppVersionRepository;
 import com.union.union.domain.appversion.service.AppVersionService;
 import com.union.union.domain.review.dto.ReviewDecisionRequestDto;
@@ -12,6 +13,7 @@ import com.union.union.domain.review.entity.Review;
 import com.union.union.domain.review.entity.Verdict;
 import com.union.union.domain.review.repository.ReviewRepository;
 import com.union.union.domain.workspace.service.WorkspaceAuthorizationService;
+import com.union.union.global.common.exception.BadRequestException;
 import com.union.union.global.common.exception.ConflictException;
 import com.union.union.global.common.exception.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -102,6 +104,41 @@ public class ReviewService {
         } else {
             version.reject();
             log.info("심사 거절. reviewId={}, versionId={}, reason={}", reviewId, version.getId(), request.reason());
+        }
+
+        return ReviewResponseDto.from(review);
+    }
+
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "miniApps", allEntries = true),
+            @CacheEvict(value = "popularMiniApps", allEntries = true)
+    })
+    public ReviewResponseDto decideByVersionId(UUID versionId, ReviewDecisionRequestDto request, UUID adminId) {
+        AppVersion version = appVersionRepository.findDetailedById(versionId)
+                .orElseThrow(() -> new EntityNotFoundException("AppVersion을 찾을 수 없습니다"));
+
+        if (version.getStatus() != VersionStatus.IN_REVIEW) {
+            throw new BadRequestException("IN_REVIEW 상태가 아닙니다. 현재 상태: " + version.getStatus());
+        }
+
+        User admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new EntityNotFoundException("관리자를 찾을 수 없습니다"));
+
+        Review review = reviewRepository.findDetailedByVersionIdAndVerdict(versionId, Verdict.PENDING)
+                .orElseGet(() -> {
+                    Review newReview = Review.builder().version(version).build();
+                    return reviewRepository.save(newReview);
+                });
+
+        review.decide(admin, request.verdict(), request.reason());
+
+        if (request.verdict() == Verdict.ACCEPTED) {
+            version.accept();
+            log.info("심사 승인 (versionId 기준). versionId={}", versionId);
+        } else {
+            version.reject();
+            log.info("심사 거절 (versionId 기준). versionId={}, reason={}", versionId, request.reason());
         }
 
         return ReviewResponseDto.from(review);

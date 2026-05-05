@@ -68,4 +68,15 @@ public class ReviewController {
         ReviewResponseDto response = reviewService.decide(id, request, principal.userId());
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/versions/{versionId}/decision")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ReviewResponseDto> decideByVersionId(
+            @PathVariable UUID versionId,
+            @Valid @RequestBody ReviewDecisionRequestDto request,
+            @AuthenticationPrincipal JwtUserPrincipal principal
+    ) {
+        ReviewResponseDto response = reviewService.decideByVersionId(versionId, request, principal.userId());
+        return ResponseEntity.ok(response);
+    }
 }
