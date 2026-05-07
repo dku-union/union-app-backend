@@ -5,10 +5,10 @@ import com.union.union.domain.appversion.entity.AppVersion;
 import com.union.union.domain.appversion.entity.VersionStatus;
 import com.union.union.domain.appversion.repository.AppVersionRepository;
 import com.union.union.domain.appversion.service.AppVersionService;
+import com.union.union.domain.publisher.entity.Publisher;
+import com.union.union.domain.publisher.repository.PublisherRepository;
 import com.union.union.domain.review.dto.ReviewDecisionRequestDto;
 import com.union.union.domain.review.dto.ReviewResponseDto;
-import com.union.union.domain.user.entity.User;
-import com.union.union.domain.user.repository.UserRepository;
 import com.union.union.domain.review.entity.Review;
 import com.union.union.domain.review.entity.Verdict;
 import com.union.union.domain.review.repository.ReviewRepository;
@@ -36,7 +36,7 @@ public class ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final AppVersionRepository appVersionRepository;
-    private final UserRepository userRepository;
+    private final PublisherRepository publisherRepository;
     private final WorkspaceAuthorizationService workspaceAuthorizationService;
     private final AppVersionService appVersionService;
 
@@ -101,7 +101,8 @@ public class ReviewService {
         Review review = reviewRepository.findDetailedById(reviewId)
                 .orElseThrow(() -> new EntityNotFoundException("Review를 찾을 수 없습니다"));
 
-        User admin = userRepository.findById(adminId).orElse(null);
+        Publisher admin = publisherRepository.findByPublisherId(adminId)
+                .orElseThrow(() -> new EntityNotFoundException("관리자를 찾을 수 없습니다"));
 
         review.decide(admin, request.verdict(), request.reason());
 
@@ -130,7 +131,8 @@ public class ReviewService {
             throw new BadRequestException("IN_REVIEW 상태가 아닙니다. 현재 상태: " + version.getStatus());
         }
 
-        User admin = userRepository.findById(adminId).orElse(null);
+        // admin 은 publishers 테이블에 role=ROLE_ADMIN 으로 존재. 누락 시에도 결정 진행(.orElse(null)).
+        Publisher admin = publisherRepository.findByPublisherId(adminId).orElse(null);
 
         Review review = reviewRepository.findDetailedByVersionIdAndVerdict(versionId, Verdict.PENDING)
                 .orElseGet(() -> {
