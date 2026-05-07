@@ -13,9 +13,11 @@ import org.springframework.stereotype.Service;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.util.UriUtils;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
@@ -89,7 +91,11 @@ public class GcsService {
      * CDN Signed URL 생성 (HMAC-SHA1)
      */
     private String generateCdnSignedUrl(String objectPath, long expirationSeconds) {
-        String urlPrefix = cdnProperties.baseUrl() + "/" + objectPath;
+        // 한글 등 non-ASCII 문자가 path에 포함되면 클라이언트가 percent-encode 후 요청한다.
+        // CDN은 요청 시점의 (encoded) path 기준으로 서명을 검증하므로,
+        // 동일하게 encoded 형태로 서명해야 mismatch 가 발생하지 않는다. (`/` 는 그대로 보존)
+        String encodedPath = UriUtils.encodePath(objectPath, StandardCharsets.UTF_8);
+        String urlPrefix = cdnProperties.baseUrl() + "/" + encodedPath;
         long expiration = Instant.now().getEpochSecond() + expirationSeconds;
 
         String urlToSign = urlPrefix + "?Expires=" + expiration + "&KeyName=" + cdnProperties.keyName();
