@@ -69,6 +69,14 @@ public class ReviewService {
                 .collect(Collectors.toList());
     }
 
+    /** publisher 가 속한 모든 워크스페이스의 모든 심사 이력. dashboard "심사 현황" 페이지용. */
+    public List<ReviewResponseDto> getMyReviews(UUID publisherId) {
+        return reviewRepository.findAllByPublisherMembership(publisherId)
+                .stream()
+                .map(ReviewResponseDto::from)
+                .collect(Collectors.toList());
+    }
+
     public ReviewResponseDto getReview(UUID reviewId) {
         Review review = reviewRepository.findDetailedById(reviewId)
                 .orElseThrow(() -> new EntityNotFoundException("Review를 찾을 수 없습니다"));

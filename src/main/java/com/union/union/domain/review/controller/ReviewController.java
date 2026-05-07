@@ -41,6 +41,19 @@ public class ReviewController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * 현재 로그인된 publisher 가 멤버인 모든 워크스페이스의 심사 이력.
+     * 반드시 {@code /{id}} 매핑보다 먼저 선언되어 path variable 충돌(`mine` → UUID 변환 실패)을 막는다.
+     */
+    @GetMapping("/mine")
+    @PreAuthorize("hasRole('PUBLISHER') or hasRole('ADMIN')")
+    public ResponseEntity<List<ReviewResponseDto>> getMyReviews(
+            @AuthenticationPrincipal JwtUserPrincipal principal
+    ) {
+        List<ReviewResponseDto> response = reviewService.getMyReviews(principal.userId());
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ReviewResponseDto> getReview(@PathVariable UUID id) {
