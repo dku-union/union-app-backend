@@ -16,6 +16,7 @@ import com.union.union.domain.workspace.service.WorkspaceAuthorizationService;
 import com.union.union.global.common.exception.BadRequestException;
 import com.union.union.global.common.exception.ConflictException;
 import com.union.union.global.common.exception.EntityNotFoundException;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -92,8 +93,7 @@ public class ReviewService {
         Review review = reviewRepository.findDetailedById(reviewId)
                 .orElseThrow(() -> new EntityNotFoundException("Review를 찾을 수 없습니다"));
 
-        User admin = userRepository.findById(adminId)
-                .orElseThrow(() -> new EntityNotFoundException("관리자를 찾을 수 없습니다"));
+        User admin = userRepository.findById(adminId).orElse(null);
 
         review.decide(admin, request.verdict(), request.reason());
 
@@ -122,8 +122,7 @@ public class ReviewService {
             throw new BadRequestException("IN_REVIEW 상태가 아닙니다. 현재 상태: " + version.getStatus());
         }
 
-        User admin = userRepository.findById(adminId)
-                .orElseThrow(() -> new EntityNotFoundException("관리자를 찾을 수 없습니다"));
+        User admin = userRepository.findById(adminId).orElse(null);
 
         Review review = reviewRepository.findDetailedByVersionIdAndVerdict(versionId, Verdict.PENDING)
                 .orElseGet(() -> {
