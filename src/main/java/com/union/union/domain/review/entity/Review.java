@@ -1,7 +1,7 @@
 package com.union.union.domain.review.entity;
 
 import com.union.union.domain.appversion.entity.AppVersion;
-import com.union.union.domain.user.entity.User;
+import com.union.union.domain.publisher.entity.Publisher;
 import com.union.union.global.common.entity.BaseEntity;
 import com.union.union.global.common.exception.BadRequestException;
 import com.union.union.global.common.exception.ConflictException;
@@ -27,9 +27,10 @@ public class Review extends BaseEntity {
     @JoinColumn(name = "version_id", nullable = false)
     private AppVersion version;
 
+    /** 심사자(=관리자). 시스템상 admin 은 publishers 테이블에 role=ROLE_ADMIN 으로 존재. */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reviewer_id")
-    private User reviewer;
+    @JoinColumn(name = "reviewer_id", referencedColumnName = "publisher_id")
+    private Publisher reviewer;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -46,7 +47,7 @@ public class Review extends BaseEntity {
         this.verdict = Verdict.PENDING;
     }
 
-    public void decide(User reviewer, Verdict verdict, String reason) {
+    public void decide(Publisher reviewer, Verdict verdict, String reason) {
         if (this.verdict != Verdict.PENDING) {
             throw new ConflictException("이미 처리된 심사입니다");
         }
