@@ -21,7 +21,7 @@ public class MiniAppCacheService {
 
     @Cacheable(value = "discovery_popular", sync = true)
     public List<MiniAppLiteDto> getPopularAppsCache() {
-        return miniAppRepository.findPopularMiniApps(MiniAppStatus.APPROVED, PageRequest.of(0, 10))
+        return miniAppRepository.findPopularMiniApps(MiniAppStatus.DEPLOYED, PageRequest.of(0, 10))
                 .stream()
                 .map(MiniAppLiteDto::from)
                 .collect(Collectors.toList());
@@ -29,7 +29,7 @@ public class MiniAppCacheService {
 
     @Cacheable(value = "discovery_new", sync = true)
     public List<MiniAppLiteDto> getNewAppsCache() {
-        return miniAppRepository.findNewMiniApps(MiniAppStatus.APPROVED, PageRequest.of(0, 10))
+        return miniAppRepository.findNewMiniApps(MiniAppStatus.DEPLOYED, PageRequest.of(0, 10))
                 .stream()
                 .map(MiniAppLiteDto::from)
                 .collect(Collectors.toList());

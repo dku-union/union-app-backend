@@ -90,7 +90,7 @@ public class DevSeedService {
                                 .build()
                 ));
 
-        // 4. MiniApp 생성 (APPROVED)
+        // 4. MiniApp 생성 (DEPLOYED)
         MiniApp miniApp = MiniApp.builder()
                 .name(appName)
                 .description(description)
@@ -98,7 +98,7 @@ public class DevSeedService {
                 .category(category)
                 .tags(tags)
                 .workspace(workspace)
-                .status(MiniAppStatus.APPROVED)
+                .status(MiniAppStatus.DEPLOYED)
                 .build();
         miniApp.updateAppId(appId);
         miniApp = miniAppRepository.save(miniApp);

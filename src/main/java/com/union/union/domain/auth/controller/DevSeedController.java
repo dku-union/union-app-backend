@@ -267,8 +267,8 @@ public class DevSeedController {
     private Map<String, Object> seedApp(Workspace workspace, MiniAppCategory category,
                                          String name, String description,
                                          String tags, String version) {
-        // 이미 동일 이름의 APPROVED 앱이 있으면 스킵
-        Optional<MiniApp> existing = miniAppRepository.findByStatus(MiniAppStatus.APPROVED)
+        // 이미 동일 이름의 DEPLOYED 앱이 있으면 스킵
+        Optional<MiniApp> existing = miniAppRepository.findByStatus(MiniAppStatus.DEPLOYED)
                 .stream()
                 .filter(a -> a.getName().equals(name) &&
                         a.getWorkspace().getWorkspaceId().equals(workspace.getWorkspaceId()))
@@ -290,7 +290,7 @@ public class DevSeedController {
                 .workspace(workspace)
                 .status(MiniAppStatus.PENDING)
                 .build());
-        app.approve();
+        app.deploy();
         miniAppRepository.save(app);
 
         // AppVersion: DRAFT → UPLOADED → tested → IN_REVIEW → ACCEPTED → DEPLOYED
