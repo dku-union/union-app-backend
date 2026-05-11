@@ -2,6 +2,7 @@ package com.union.union.domain.appversion.dto;
 
 import com.union.union.domain.appversion.entity.AppVersion;
 import com.union.union.domain.appversion.entity.VersionStatus;
+import com.union.union.domain.miniapp.entity.MiniAppStatus;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -14,6 +15,7 @@ public record AppVersionResponseDto(
     String versionNumber,
     String releaseNotes,
     VersionStatus status,
+    MiniAppStatus miniAppStatus,
     String buildFileUrl,
     Long bundleSize,
     LocalDateTime testedAt,
@@ -29,6 +31,7 @@ public record AppVersionResponseDto(
             version.getVersionNumber(),
             version.getReleaseNotes(),
             version.getStatus(),
+            version.getMiniApp().getStatus(),
             version.getBuildFileUrl(),
             version.getBundleSize(),
             version.getTestedAt(),

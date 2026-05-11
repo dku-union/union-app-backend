@@ -83,7 +83,7 @@ public interface MiniAppRepository extends JpaRepository<MiniApp, Long> {
     @Query("SELECT m FROM MiniApp m JOIN FETCH m.workspace WHERE m.category = :category AND m.status = :status")
     List<MiniApp> findByCategoryAndStatus(@Param("category") MiniAppCategory category, @Param("status") MiniAppStatus status, Pageable pageable);
 
-    @Query("SELECT m FROM MiniApp m JOIN FETCH m.workspace WHERE m.status = 'APPROVED' ORDER BY FUNCTION('RANDOM')")
+    @Query("SELECT m FROM MiniApp m JOIN FETCH m.workspace WHERE m.status = 'DEPLOYED' ORDER BY FUNCTION('RANDOM')")
     List<MiniApp> findRandomMiniApps(Pageable pageable);
 
     // ──────────────────────────────────────────────────────────────

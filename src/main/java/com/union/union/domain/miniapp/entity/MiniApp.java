@@ -79,6 +79,10 @@ public class MiniApp extends BaseEntity {
         this.status = MiniAppStatus.APPROVED;
     }
 
+    public void deploy() {
+        this.status = MiniAppStatus.DEPLOYED;
+    }
+
     public void reject() {
         this.status = MiniAppStatus.REJECTED;
     }

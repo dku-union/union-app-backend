@@ -81,7 +81,7 @@ public class MiniAppService {
     // TODO: 커서 페이징 구현 (기획 확정 후)
     @Cacheable(value = "miniApps", key = "'approved'")
     public List<MiniAppResponseDto> getApprovedMiniApps() {
-        return miniAppRepository.findByStatus(MiniAppStatus.APPROVED)
+        return miniAppRepository.findByStatus(MiniAppStatus.DEPLOYED)
                 .stream()
                 .map(MiniAppResponseDto::from)
                 .collect(Collectors.toList());
@@ -89,7 +89,7 @@ public class MiniAppService {
 
     @Cacheable(value = "popularMiniApps", key = "#limit")
     public List<MiniAppResponseDto> getPopularMiniApps(int limit) {
-        return miniAppRepository.findPopularMiniApps(MiniAppStatus.APPROVED, PageRequest.of(0, limit))
+        return miniAppRepository.findPopularMiniApps(MiniAppStatus.DEPLOYED, PageRequest.of(0, limit))
                 .stream()
                 .map(MiniAppResponseDto::from)
                 .collect(Collectors.toList());
@@ -101,10 +101,10 @@ public class MiniAppService {
 
         // 1. 같은 대학 인기 앱 (Top 5)
         List<MiniApp> universityPopular = miniAppRepository.findRecommendedByUniversity(
-                user.getUniversityName(), MiniAppStatus.APPROVED, PageRequest.of(0, 5));
+                user.getUniversityName(), MiniAppStatus.DEPLOYED, PageRequest.of(0, 5));
 
         // 2. 내가 최근에 사용한 앱 (Top 5)
-        List<MiniApp> myRecent = miniAppRepository.findRecentByUser(userId, MiniAppStatus.APPROVED, PageRequest.of(0, 5));
+        List<MiniApp> myRecent = miniAppRepository.findRecentByUser(userId, MiniAppStatus.DEPLOYED, PageRequest.of(0, 5));
 
         // 3. ID 기반 중복 제거 및 결합
         java.util.LinkedHashMap<Long, MiniApp> combined = new java.util.LinkedHashMap<>();
@@ -113,7 +113,7 @@ public class MiniAppService {
 
         // 4. 결과가 부족하면 글로벌 인기 앱 추가
         if (combined.size() < 5) {
-            List<MiniApp> globalPopular = miniAppRepository.findPopularMiniApps(MiniAppStatus.APPROVED, PageRequest.of(0, 10));
+            List<MiniApp> globalPopular = miniAppRepository.findPopularMiniApps(MiniAppStatus.DEPLOYED, PageRequest.of(0, 10));
             for (MiniApp popular : globalPopular) {
                 combined.putIfAbsent(popular.getId(), popular);
                 if (combined.size() >= 10) break;
@@ -159,7 +159,7 @@ public class MiniAppService {
         if (userId == null) {
             return java.util.Collections.emptyList();
         }
-        return miniAppRepository.findRecentByUser(userId, MiniAppStatus.APPROVED, PageRequest.of(0, 5))
+        return miniAppRepository.findRecentByUser(userId, MiniAppStatus.DEPLOYED, PageRequest.of(0, 5))
                 .stream()
                 .map(MiniAppLiteDto::from)
                 .collect(Collectors.toList());
@@ -197,8 +197,8 @@ public class MiniAppService {
         MiniApp miniApp = miniAppRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("MiniApp을 찾을 수 없습니다"));
 
-        if (miniApp.getStatus() != MiniAppStatus.APPROVED) {
-            throw new UnauthorizedAccessException("승인되지 않은 MiniApp입니다");
+        if (miniApp.getStatus() != MiniAppStatus.DEPLOYED) {
+            throw new UnauthorizedAccessException("배포되지 않은 MiniApp입니다");
         }
 
         // TODO: 대학교 제한 체크 (university 필터링 확정 후 구현)

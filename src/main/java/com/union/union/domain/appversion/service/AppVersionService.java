@@ -10,7 +10,6 @@ import com.union.union.domain.appversion.dto.TestLinkResponseDto;
 import com.union.union.domain.appversion.entity.AppVersion;
 import com.union.union.domain.appversion.repository.AppVersionRepository;
 import com.union.union.domain.miniapp.entity.MiniApp;
-import com.union.union.domain.miniapp.entity.MiniAppStatus;
 import com.union.union.domain.miniapp.repository.MiniAppRepository;
 import com.union.union.domain.workspace.service.WorkspaceAuthorizationService;
 import com.union.union.global.common.exception.BadRequestException;
@@ -58,7 +57,7 @@ public class AppVersionService {
 
         String token = UUID.randomUUID().toString();
         String redisKey = "test-link:" + token;
-        
+
         // 10분 유효기간 설정
         redisService.setValuesWithTimeout(redisKey, version.getId().toString(), Duration.ofMinutes(10));
 
@@ -92,8 +91,7 @@ public class AppVersionService {
                 version.getMiniApp().getId(),
                 version.getMiniApp().getName(),
                 version.getVersionNumber(),
-                signedUrl
-        );
+                signedUrl);
     }
 
     @Transactional
@@ -168,17 +166,14 @@ public class AppVersionService {
     @Transactional
     public AppVersionResponseDto deploy(UUID versionId, UUID publisherId) {
         AppVersion version = getVersionWithOwnerCheck(versionId, publisherId);
-        
+
         version.deploy();
-        
-        // Ensure parent MiniApp becomes AVAILABLE/APPROVED when its version goes live for the first time
+
         MiniApp miniApp = version.getMiniApp();
-        if (miniApp.getStatus() != MiniAppStatus.APPROVED) {
-            miniApp.approve();
-        }
+        miniApp.deploy();
 
         log.info("AppVersion 배포 완료 (DEPLOYED). versionId={}, miniAppId={}", versionId, miniApp.getId());
-        
+
         return AppVersionResponseDto.from(version);
     }
 
@@ -187,7 +182,8 @@ public class AppVersionService {
                 .orElseThrow(() -> new EntityNotFoundException("AppVersion을 찾을 수 없습니다"));
 
         if (!isAdmin()) {
-            workspaceAuthorizationService.validateMembership(version.getMiniApp().getWorkspace().getWorkspaceId(), publisherId);
+            workspaceAuthorizationService.validateMembership(version.getMiniApp().getWorkspace().getWorkspaceId(),
+                    publisherId);
         }
 
         return version;
