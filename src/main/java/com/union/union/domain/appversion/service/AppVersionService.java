@@ -11,6 +11,7 @@ import com.union.union.domain.appversion.entity.AppVersion;
 import com.union.union.domain.appversion.repository.AppVersionRepository;
 import com.union.union.domain.miniapp.entity.MiniApp;
 import com.union.union.domain.miniapp.repository.MiniAppRepository;
+import com.union.union.domain.notification.service.NotificationService;
 import com.union.union.domain.workspace.service.WorkspaceAuthorizationService;
 import com.union.union.global.common.exception.BadRequestException;
 import com.union.union.global.common.exception.ConflictException;
@@ -41,6 +42,7 @@ public class AppVersionService {
     private final GcsService gcsService;
     private final RedisService redisService;
     private final Storage storage;
+    private final NotificationService notificationService;
 
     @Value("${spring.cloud.gcp.storage.bucket}")
     private String bucketName;
@@ -173,6 +175,10 @@ public class AppVersionService {
         miniApp.deploy();
 
         log.info("AppVersion 배포 완료 (DEPLOYED). versionId={}, miniAppId={}", versionId, miniApp.getId());
+        notificationService.sendToPublisher(
+                miniApp.getWorkspace().getOwner().getPublisherId(),
+                "배포 완료",
+                miniApp.getName() + " " + version.getVersionNumber() + " 버전이 배포되었습니다.");
 
         return AppVersionResponseDto.from(version);
     }

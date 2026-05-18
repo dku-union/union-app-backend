@@ -12,6 +12,7 @@ import com.union.union.domain.review.dto.ReviewResponseDto;
 import com.union.union.domain.review.entity.Review;
 import com.union.union.domain.review.entity.Verdict;
 import com.union.union.domain.review.repository.ReviewRepository;
+import com.union.union.domain.notification.service.NotificationService;
 import com.union.union.domain.workspace.service.WorkspaceAuthorizationService;
 import com.union.union.global.common.exception.BadRequestException;
 import com.union.union.global.common.exception.ConflictException;
@@ -39,6 +40,7 @@ public class ReviewService {
     private final PublisherRepository publisherRepository;
     private final WorkspaceAuthorizationService workspaceAuthorizationService;
     private final AppVersionService appVersionService;
+    private final NotificationService notificationService;
 
     @Transactional
     public ReviewResponseDto submitForReview(UUID versionId, UUID publisherId) {
@@ -107,12 +109,17 @@ public class ReviewService {
         review.decide(admin, request.verdict(), request.reason());
 
         AppVersion version = review.getVersion();
+        UUID publisherId = version.getMiniApp().getWorkspace().getOwner().getPublisherId();
         if (request.verdict() == Verdict.ACCEPTED) {
             version.accept();
             log.info("심사 승인. reviewId={}, versionId={}", reviewId, version.getId());
+            notificationService.sendToPublisher(publisherId, "심사 승인",
+                    version.getMiniApp().getName() + " 앱이 심사를 통과했습니다. 배포 버튼을 눌러 출시하세요.");
         } else {
             version.reject();
             log.info("심사 거절. reviewId={}, versionId={}, reason={}", reviewId, version.getId(), request.reason());
+            notificationService.sendToPublisher(publisherId, "심사 거절",
+                    version.getMiniApp().getName() + " 앱이 심사에서 거절되었습니다. 사유: " + request.reason());
         }
 
         return ReviewResponseDto.from(review);
@@ -142,12 +149,17 @@ public class ReviewService {
 
         review.decide(admin, request.verdict(), request.reason());
 
+        UUID publisherId = version.getMiniApp().getWorkspace().getOwner().getPublisherId();
         if (request.verdict() == Verdict.ACCEPTED) {
             version.accept();
             log.info("심사 승인 (versionId 기준). versionId={}", versionId);
+            notificationService.sendToPublisher(publisherId, "심사 승인",
+                    version.getMiniApp().getName() + " 앱이 심사를 통과했습니다. 배포 버튼을 눌러 출시하세요.");
         } else {
             version.reject();
             log.info("심사 거절 (versionId 기준). versionId={}, reason={}", versionId, request.reason());
+            notificationService.sendToPublisher(publisherId, "심사 거절",
+                    version.getMiniApp().getName() + " 앱이 심사에서 거절되었습니다. 사유: " + request.reason());
         }
 
         return ReviewResponseDto.from(review);
