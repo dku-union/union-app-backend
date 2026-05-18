@@ -41,6 +41,9 @@ dependencies {
 	// Redis
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
+	// Firebase Admin SDK (FCM push notifications)
+	implementation 'com.google.firebase:firebase-admin:9.3.0'
+
 	runtimeOnly 'org.postgresql:postgresql'
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
