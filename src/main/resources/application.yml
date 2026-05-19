@@ -50,6 +50,11 @@ spring:
       storage:
         bucket: ${GCS_BUCKET_NAME:union-app-miniapps}
 
+banner:
+  bucket:
+    # 배너 이미지 전용 버킷. 사전에 GCP 콘솔에서 생성 + public read(allUsers:objectViewer) 필요.
+    name: ${BANNER_BUCKET_NAME:union-app-banners}
+
 jwt:
   secret: ${JWT_SECRET:union-super-app-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256}
   access-token-expiration: 1800000     # 30분

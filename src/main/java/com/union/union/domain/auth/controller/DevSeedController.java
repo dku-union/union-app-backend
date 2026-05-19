@@ -2,8 +2,13 @@ package com.union.union.domain.auth.controller;
 
 import com.union.union.domain.appversion.entity.AppVersion;
 import com.union.union.domain.appversion.repository.AppVersionRepository;
+import com.union.union.domain.banner.entity.Banner;
+import com.union.union.domain.banner.entity.BannerLinkType;
+import com.union.union.domain.banner.repository.BannerRepository;
+import com.union.union.domain.banner.service.BannerService;
 import com.union.union.domain.dev.dto.DevSeedResponseDto;
 import com.union.union.domain.dev.service.DevSeedService;
+import com.union.union.global.infra.gcs.GcsService;
 import com.union.union.domain.miniapp.entity.MiniApp;
 import com.union.union.domain.miniapp.entity.MiniAppCategory;
 import com.union.union.domain.miniapp.entity.MiniAppStatus;
@@ -57,6 +62,9 @@ public class DevSeedController {
     private final AppVersionRepository appVersionRepository;
     private final EntityManager entityManager;
     private final DevSeedService devSeedService;
+    private final BannerRepository bannerRepository;
+    private final BannerService bannerService;
+    private final GcsService gcsService;
 
     private static final UUID TEST_PUBLISHER_ID = UUID.fromString("66d1bf78-29b5-45d8-bba7-f08f88bffa23");
     private static final UUID TEST_WORKSPACE_ID = UUID.fromString("77d1bf78-29b5-45d8-bba7-f08f88bffa23");
@@ -159,6 +167,54 @@ public class DevSeedController {
                 versionNumber, releaseNotes, iconUrl, publisherName, file
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * 배너 시드 — 이미지 파일과 메타데이터를 받아 GCS 업로드 + DB INSERT.
+     *
+     * Content-Type: multipart/form-data
+     * required:  file
+     * optional:  title, subtitle, linkType (default NONE), linkTarget,
+     *            sortOrder (default 0), targetUniversity
+     *
+     * 반환: { id, imageUrl }
+     */
+    @PostMapping(value = "/seed/banner", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Transactional
+    public ResponseEntity<Map<String, Object>> seedBanner(
+            @RequestPart("file") MultipartFile file,
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) String subtitle,
+            @RequestParam(required = false, defaultValue = "NONE") BannerLinkType linkType,
+            @RequestParam(required = false) String linkTarget,
+            @RequestParam(required = false, defaultValue = "0") int sortOrder,
+            @RequestParam(required = false) String targetUniversity
+    ) throws IOException {
+        String safeName = file.getOriginalFilename() != null ? file.getOriginalFilename() : "banner.png";
+        String objectPath = "banners/" + UUID.randomUUID() + "-" + safeName.replaceAll("[^A-Za-z0-9._-]", "_");
+        String imageUrl = gcsService.uploadBannerImage(file, objectPath);
+
+        Banner banner = Banner.builder()
+                .imageUrl(imageUrl)
+                .title(title)
+                .subtitle(subtitle)
+                .linkType(linkType)
+                .linkTarget(linkTarget)
+                .sortOrder(sortOrder)
+                .isActive(true)
+                .targetUniversity(targetUniversity)
+                .build();
+        bannerRepository.save(banner);
+        bannerService.invalidateCache();
+
+        log.info("Banner seed 완료. id={}, imageUrl={}", banner.getId(), imageUrl);
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("id", banner.getId());
+        body.put("imageUrl", imageUrl);
+        body.put("linkType", banner.getLinkType());
+        body.put("sortOrder", banner.getSortOrder());
+        return ResponseEntity.status(HttpStatus.CREATED).body(body);
     }
 
     /**
