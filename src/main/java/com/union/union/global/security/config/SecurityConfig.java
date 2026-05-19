@@ -65,6 +65,9 @@ public class SecurityConfig {
                 // GET summary/events: 퍼블리셔 대시보드 (@PreAuthorize 로 세부 인가)
                 .requestMatchers(HttpMethod.GET, "/api/v1/analytics/**").authenticated()
 
+                // Banner endpoints (Public) — Home 캐러셀 노출용
+                .requestMatchers(HttpMethod.GET, "/banners").permitAll()
+
                 // MiniApp endpoints (Public)
                 .requestMatchers(HttpMethod.GET, "/mini-apps").permitAll()
                 .requestMatchers(HttpMethod.GET, "/mini-apps/popular").permitAll()
