@@ -32,6 +32,24 @@ public class DevRequestLoggingFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
+        // multipart 요청은 wrapper 로 감싸지 않고 그대로 통과시킨다.
+        // ReReadableRequestWrapper.getInputStream() 이 ByteArrayInputStream 을 반환하면
+        // Tomcat 의 multipart parser 가 boundary/parts 를 정상적으로 분리하지 못해
+        // @RequestPart 가 MissingServletRequestPartException 으로 실패한다.
+        String contentType = request.getContentType();
+        if (contentType != null && contentType.toLowerCase().startsWith("multipart/")) {
+            ContentCachingResponseWrapper wrappedResponse = new ContentCachingResponseWrapper(response);
+            long start = System.currentTimeMillis();
+            try {
+                filterChain.doFilter(request, wrappedResponse);
+            } finally {
+                long duration = System.currentTimeMillis() - start;
+                logRequest(request, wrappedResponse, new byte[0], duration);
+                wrappedResponse.copyBodyToResponse();
+            }
+            return;
+        }
+
         // body를 미리 읽어 두고 다운스트림에서도 재사용 가능한 wrapper
         byte[] bodyBytes = request.getInputStream().readAllBytes();
         HttpServletRequest reReadableRequest = new ReReadableRequestWrapper(request, bodyBytes);
