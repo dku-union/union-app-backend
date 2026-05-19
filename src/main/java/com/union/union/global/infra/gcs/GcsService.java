@@ -35,6 +35,13 @@ public class GcsService {
     @Value("${spring.cloud.gcp.storage.bucket}")
     private String bucketName;
 
+    /**
+     * 배너 이미지 전용 버킷 — 미니앱 번들 버킷과 분리.
+     * 라이프사이클 정책(배너=long-cache, 미니앱=immutable) 및 권한 정책 분리 목적.
+     */
+    @Value("${banner.bucket.name:union-app-banners}")
+    private String bannerBucketName;
+
     private static final String CDN_URL_CACHE_PREFIX = "cdn:signed-url:";
     private static final long CDN_URL_EXPIRATION_SECONDS = 3600;      // CDN URL 유효: 1시간
     private static final long REDIS_CACHE_SECONDS = 3000;             // Redis 캐시: 50분 (10분 버퍼)
@@ -71,6 +78,29 @@ public class GcsService {
                 .build();
         storage.create(blobInfo, file.getBytes());
         return objectPath;
+    }
+
+    /**
+     * 배너 이미지를 배너 버킷에 업로드하고 공개 HTTPS URL 반환.
+     * 버킷은 사전에 public read(allUsers:objectViewer) 권한이 설정되어 있어야 함.
+     *
+     * @return https://storage.googleapis.com/{bannerBucket}/{objectPath}
+     */
+    public String uploadBannerImage(MultipartFile file, String objectPath) throws IOException {
+        BlobId blobId = BlobId.of(bannerBucketName, objectPath);
+        BlobInfo blobInfo = BlobInfo.newBuilder(blobId)
+                .setContentType(file.getContentType() != null ? file.getContentType() : "image/png")
+                .setCacheControl("public, max-age=86400")
+                .build();
+        storage.create(blobInfo, file.getBytes());
+        return getBannerPublicUrl(objectPath);
+    }
+
+    /**
+     * 배너 이미지 공개 URL. 배너 버킷이 public read 면 그대로 fetch 가능.
+     */
+    public String getBannerPublicUrl(String objectPath) {
+        return "https://storage.googleapis.com/" + bannerBucketName + "/" + objectPath;
     }
 
     /**
