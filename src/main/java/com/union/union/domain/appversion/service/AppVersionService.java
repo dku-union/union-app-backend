@@ -10,6 +10,7 @@ import com.union.union.domain.appversion.dto.TestLinkResponseDto;
 import com.union.union.domain.appversion.entity.AppVersion;
 import com.union.union.domain.appversion.repository.AppVersionRepository;
 import com.union.union.domain.miniapp.entity.MiniApp;
+import com.union.union.domain.miniapp.entity.MiniAppStatus;
 import com.union.union.domain.miniapp.repository.MiniAppRepository;
 import com.union.union.domain.notification.service.NotificationService;
 import com.union.union.domain.workspace.service.WorkspaceAuthorizationService;
@@ -171,8 +172,12 @@ public class AppVersionService {
 
         version.deploy();
 
+        // 라이브 노출은 MiniApp.status == APPROVED 기준. 버전 배포 시 부모 MiniApp 이
+        // APPROVED 가 아니면 안전망으로 APPROVED 로 복원만 한다 (status 를 따로 DEPLOYED 로 옮기지 않음).
         MiniApp miniApp = version.getMiniApp();
-        miniApp.deploy();
+        if (miniApp.getStatus() != MiniAppStatus.APPROVED) {
+            miniApp.approve();
+        }
 
         log.info("AppVersion 배포 완료 (DEPLOYED). versionId={}, miniAppId={}", versionId, miniApp.getId());
         notificationService.sendToPublisher(

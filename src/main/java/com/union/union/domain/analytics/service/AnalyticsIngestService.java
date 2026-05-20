@@ -144,7 +144,7 @@ public class AnalyticsIngestService {
         // 캐시 히트 → 검증 완료된 appId
         if (redisService.hasKey(cacheKey)) return;
 
-        boolean exists = miniAppRepository.existsByAppIdAndStatus(appId, MiniAppStatus.DEPLOYED);
+        boolean exists = miniAppRepository.existsByAppIdAndStatus(appId, MiniAppStatus.APPROVED);
         if (!exists) {
             throw new EntityNotFoundException(
                 "Mini-app not found or not deployed: appId=" + appId

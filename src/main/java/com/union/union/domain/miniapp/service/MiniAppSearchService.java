@@ -34,7 +34,7 @@ public class MiniAppSearchService {
             redisService.incrementScore(SEARCH_TRENDING_KEY, keyword.trim(), 1.0);
         }
 
-        return miniAppRepository.searchByKeyword(keyword, MiniAppStatus.DEPLOYED, pageable)
+        return miniAppRepository.searchByKeyword(keyword, MiniAppStatus.APPROVED, pageable)
                 .stream()
                 .map(MiniAppLiteDto::from)
                 .collect(Collectors.toList());
@@ -47,7 +47,7 @@ public class MiniAppSearchService {
 
         String jamoPrefix = com.union.union.domain.miniapp.utils.KoreanUtils.decompose(keyword.trim().toLowerCase());
 
-        return miniAppRepository.findByStatusAndSearchableNameStartingWith(MiniAppStatus.DEPLOYED, jamoPrefix, pageable)
+        return miniAppRepository.findByStatusAndSearchableNameStartingWith(MiniAppStatus.APPROVED, jamoPrefix, pageable)
                 .stream()
                 .map(MiniAppLiteDto::from)
                 .collect(Collectors.toList());
@@ -57,7 +57,7 @@ public class MiniAppSearchService {
         MiniAppCategory category = miniAppCategoryRepository.findById(categoryId)
                 .orElseThrow(() -> new com.union.union.global.common.exception.EntityNotFoundException("카테고리를 찾을 수 없습니다"));
 
-        return miniAppRepository.findByCategoryAndStatus(category, MiniAppStatus.DEPLOYED, pageable)
+        return miniAppRepository.findByCategoryAndStatus(category, MiniAppStatus.APPROVED, pageable)
                 .stream()
                 .map(MiniAppLiteDto::from)
                 .collect(Collectors.toList());
