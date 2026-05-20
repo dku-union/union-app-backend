@@ -3,6 +3,7 @@ package com.union.union.domain.miniapp.controller;
 import com.union.union.domain.miniapp.dto.*;
 import com.union.union.domain.miniapp.service.MiniAppSearchService;
 import com.union.union.domain.miniapp.service.MiniAppService;
+import com.union.union.global.infra.gcs.dto.GcsSignedUrlResponseDto;
 import com.union.union.global.security.jwt.JwtUserPrincipal;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -123,5 +124,27 @@ public class MiniAppController {
     @GetMapping("/search/popular")
     public ResponseEntity<List<String>> getPopularKeywords() {
         return ResponseEntity.ok(miniAppSearchService.getPopularKeywords(5));
+    }
+
+    @PostMapping("/{id}/icon/upload-url")
+    @PreAuthorize("hasRole('PUBLISHER')")
+    public ResponseEntity<GcsSignedUrlResponseDto> getIconUploadUrl(
+            @PathVariable Long id,
+            @Valid @RequestBody IconUploadUrlRequestDto request,
+            @AuthenticationPrincipal JwtUserPrincipal principal
+    ) {
+        GcsSignedUrlResponseDto response = miniAppService.getIconUploadUrl(id, principal.userId(), request.filename());
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{id}/icon")
+    @PreAuthorize("hasRole('PUBLISHER')")
+    public ResponseEntity<MiniAppResponseDto> updateIcon(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateIconRequestDto request,
+            @AuthenticationPrincipal JwtUserPrincipal principal
+    ) {
+        MiniAppResponseDto response = miniAppService.updateIconUrl(id, principal.userId(), request.iconUrl());
+        return ResponseEntity.ok(response);
     }
 }

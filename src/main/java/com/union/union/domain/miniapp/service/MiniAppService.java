@@ -5,6 +5,7 @@ import com.union.union.domain.appversion.entity.VersionStatus;
 import com.union.union.domain.appversion.repository.AppVersionRepository;
 import com.union.union.domain.miniapp.dto.*;
 import com.union.union.domain.miniapp.entity.MiniApp;
+import com.union.union.global.infra.gcs.dto.GcsSignedUrlResponseDto;
 import com.union.union.domain.miniapp.entity.MiniAppCategory;
 import com.union.union.domain.miniapp.entity.MiniAppStatus;
 import com.union.union.domain.miniapp.repository.MiniAppCategoryRepository;
@@ -190,6 +191,23 @@ public class MiniAppService {
                 .stream()
                 .map(MiniAppResponseDto::from)
                 .collect(Collectors.toList());
+    }
+
+    public GcsSignedUrlResponseDto getIconUploadUrl(Long miniAppId, UUID publisherId, String filename) {
+        MiniApp miniApp = miniAppRepository.findById(miniAppId)
+                .orElseThrow(() -> new EntityNotFoundException("MiniApp을 찾을 수 없습니다"));
+        workspaceAuthorizationService.validateMembership(miniApp.getWorkspace().getWorkspaceId(), publisherId);
+        return gcsService.getIconUploadUrl(miniAppId, filename);
+    }
+
+    @Transactional
+    @CacheEvict(value = "miniApps", allEntries = true)
+    public MiniAppResponseDto updateIconUrl(Long miniAppId, UUID publisherId, String iconUrl) {
+        MiniApp miniApp = miniAppRepository.findById(miniAppId)
+                .orElseThrow(() -> new EntityNotFoundException("MiniApp을 찾을 수 없습니다"));
+        workspaceAuthorizationService.validateMembership(miniApp.getWorkspace().getWorkspaceId(), publisherId);
+        miniApp.updateIconUrl(iconUrl);
+        return MiniAppResponseDto.from(miniApp);
     }
 
     @Transactional

@@ -104,6 +104,28 @@ public class GcsService {
     }
 
     /**
+     * 미니앱 아이콘 업로드용 GCS Signed PUT URL (5분) + 공개 다운로드 URL.
+     * 아이콘은 배너 버킷(public read)의 icons/{miniAppId}/ 경로에 저장.
+     */
+    public GcsSignedUrlResponseDto getIconUploadUrl(Long miniAppId, String filename) {
+        String ext = filename.contains(".") ? filename.substring(filename.lastIndexOf('.')) : "";
+        String blobName = String.format("icons/%d/%s%s", miniAppId, UUID.randomUUID(), ext);
+
+        BlobInfo blobInfo = BlobInfo.newBuilder(bannerBucketName, blobName).build();
+
+        URL signedUrl = storage.signUrl(
+                blobInfo,
+                5,
+                TimeUnit.MINUTES,
+                Storage.SignUrlOption.httpMethod(HttpMethod.PUT),
+                Storage.SignUrlOption.withV4Signature()
+        );
+
+        String publicUrl = "https://storage.googleapis.com/" + bannerBucketName + "/" + blobName;
+        return new GcsSignedUrlResponseDto(signedUrl.toString(), publicUrl);
+    }
+
+    /**
      * CDN Signed URL 조회 (Redis 캐시 → 미스 시 생성)
      */
     public String getCdnDownloadUrl(String objectPath) {

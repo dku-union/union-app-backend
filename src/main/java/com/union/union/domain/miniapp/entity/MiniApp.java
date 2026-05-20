@@ -75,6 +75,10 @@ public class MiniApp extends BaseEntity {
         this.appId = appId;
     }
 
+    public void updateIconUrl(String iconUrl) {
+        this.iconUrl = iconUrl;
+    }
+
     public void approve() {
         this.status = MiniAppStatus.APPROVED;
     }
