@@ -98,7 +98,7 @@ public class DevSeedService {
                 .category(category)
                 .tags(tags)
                 .workspace(workspace)
-                .status(MiniAppStatus.DEPLOYED)
+                .status(MiniAppStatus.APPROVED)
                 .build();
         miniApp.updateAppId(appId);
         miniApp = miniAppRepository.save(miniApp);
