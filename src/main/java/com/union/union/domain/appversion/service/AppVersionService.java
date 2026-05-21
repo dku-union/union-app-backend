@@ -5,6 +5,7 @@ import com.google.cloud.storage.Storage;
 import com.union.union.domain.appversion.dto.AppVersionResponseDto;
 import com.union.union.domain.appversion.dto.CreateVersionRequestDto;
 import com.union.union.domain.appversion.dto.CreateVersionResponseDto;
+import com.union.union.domain.appversion.entity.VersionStatus;
 import com.union.union.domain.appversion.dto.TestBundleResponseDto;
 import com.union.union.domain.appversion.dto.TestLinkResponseDto;
 import com.union.union.domain.appversion.entity.AppVersion;
@@ -164,6 +165,23 @@ public class AppVersionService {
         AppVersion version = appVersionRepository.findDetailedById(versionId)
                 .orElseThrow(() -> new EntityNotFoundException("AppVersion을 찾을 수 없습니다"));
         return AppVersionResponseDto.from(version);
+    }
+
+    public CreateVersionResponseDto refreshUploadUrl(UUID versionId, UUID publisherId) {
+        AppVersion version = getVersionWithOwnerCheck(versionId, publisherId);
+
+        if (version.getStatus() != VersionStatus.DRAFT) {
+            throw new ConflictException("이미 업로드가 완료된 버전입니다");
+        }
+
+        String filename = String.format("%s/versions/%s/%s-%s.unionapp",
+                version.getMiniApp().getId(), version.getId(),
+                version.getMiniApp().getName(), version.getVersionNumber());
+        var signedUrlResponse = gcsService.getMiniAppSignedUrl(publisherId, filename);
+
+        log.info("AppVersion 업로드 URL 재발급. versionId={}", versionId);
+
+        return new CreateVersionResponseDto(version.getId(), signedUrlResponse.signedUrl());
     }
 
     @Transactional

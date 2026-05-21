@@ -91,6 +91,16 @@ public class AppVersionController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/{id}/upload-url-refresh")
+    @PreAuthorize("hasRole('PUBLISHER') or hasRole('ADMIN')")
+    public ResponseEntity<CreateVersionResponseDto> refreshUploadUrl(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal JwtUserPrincipal principal
+    ) {
+        CreateVersionResponseDto response = appVersionService.refreshUploadUrl(id, principal.userId());
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/{id}/deploy")
     @PreAuthorize("hasRole('PUBLISHER') or hasRole('ADMIN')")
     public ResponseEntity<AppVersionResponseDto> deploy(

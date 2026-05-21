@@ -63,6 +63,10 @@ public class MiniAppService {
         MiniAppCategory category = miniAppCategoryRepository.findById(request.categoryId())
                 .orElseThrow(() -> new EntityNotFoundException("카테고리를 찾을 수 없습니다"));
 
+        String tags = (request.keywords() != null && !request.keywords().isEmpty())
+                ? String.join(",", request.keywords())
+                : null;
+
         MiniApp miniApp = MiniApp.builder()
                 .name(request.name())
                 .description(request.description())
@@ -70,6 +74,9 @@ public class MiniAppService {
                 .category(category)
                 .workspace(workspace)
                 .status(MiniAppStatus.PENDING)
+                .appId(request.appId())
+                .tags(tags)
+                .permissions(request.permissions())
                 .build();
 
         miniAppRepository.save(miniApp);
@@ -207,6 +214,16 @@ public class MiniAppService {
                 .orElseThrow(() -> new EntityNotFoundException("MiniApp을 찾을 수 없습니다"));
         workspaceAuthorizationService.validateMembership(miniApp.getWorkspace().getWorkspaceId(), publisherId);
         miniApp.updateIconUrl(iconUrl);
+        return MiniAppResponseDto.from(miniApp);
+    }
+
+    @Transactional
+    @CacheEvict(value = "miniApps", allEntries = true)
+    public MiniAppResponseDto updateMeta(Long miniAppId, UUID publisherId, String name, String description) {
+        MiniApp miniApp = miniAppRepository.findById(miniAppId)
+                .orElseThrow(() -> new EntityNotFoundException("MiniApp을 찾을 수 없습니다"));
+        workspaceAuthorizationService.validateMembership(miniApp.getWorkspace().getWorkspaceId(), publisherId);
+        miniApp.updateMeta(name, description);
         return MiniAppResponseDto.from(miniApp);
     }
 

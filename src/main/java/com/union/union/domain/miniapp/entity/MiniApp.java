@@ -4,6 +4,10 @@ import com.union.union.domain.workspace.entity.Workspace;
 import com.union.union.global.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import java.util.List;
 
 @Entity
 @Getter
@@ -35,7 +39,6 @@ public class MiniApp extends BaseEntity {
     @JoinColumn(name = "workspace_id", nullable = false)
     private Workspace workspace;
 
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private MiniAppStatus status;
@@ -51,8 +54,13 @@ public class MiniApp extends BaseEntity {
     @Column(name = "searchable_name", length = 300)
     private String searchableName;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "permissions", columnDefinition = "jsonb")
+    private List<PermissionScope> permissions;
+
     @Builder
-    public MiniApp(String name, String description, String iconUrl, MiniAppCategory category, String tags, Workspace workspace, MiniAppStatus status, String appId) {
+    public MiniApp(String name, String description, String iconUrl, MiniAppCategory category, String tags,
+                   Workspace workspace, MiniAppStatus status, String appId, List<PermissionScope> permissions) {
         this.name = name;
         this.description = description;
         this.iconUrl = iconUrl;
@@ -61,6 +69,7 @@ public class MiniApp extends BaseEntity {
         this.workspace = workspace;
         this.status = status != null ? status : MiniAppStatus.PENDING;
         this.appId = appId;
+        this.permissions = permissions;
     }
 
     @PrePersist
@@ -77,6 +86,11 @@ public class MiniApp extends BaseEntity {
 
     public void updateIconUrl(String iconUrl) {
         this.iconUrl = iconUrl;
+    }
+
+    public void updateMeta(String name, String description) {
+        if (name != null) this.name = name;
+        this.description = description;
     }
 
     public void approve() {
