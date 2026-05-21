@@ -79,6 +79,11 @@ public class MiniApp extends BaseEntity {
         this.iconUrl = iconUrl;
     }
 
+    public void updateMeta(String name, String description) {
+        if (name != null) this.name = name;
+        this.description = description;
+    }
+
     public void approve() {
         this.status = MiniAppStatus.APPROVED;
     }

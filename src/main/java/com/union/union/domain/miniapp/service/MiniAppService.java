@@ -211,6 +211,16 @@ public class MiniAppService {
     }
 
     @Transactional
+    @CacheEvict(value = "miniApps", allEntries = true)
+    public MiniAppResponseDto updateMeta(Long miniAppId, UUID publisherId, String name, String description) {
+        MiniApp miniApp = miniAppRepository.findById(miniAppId)
+                .orElseThrow(() -> new EntityNotFoundException("MiniApp을 찾을 수 없습니다"));
+        workspaceAuthorizationService.validateMembership(miniApp.getWorkspace().getWorkspaceId(), publisherId);
+        miniApp.updateMeta(name, description);
+        return MiniAppResponseDto.from(miniApp);
+    }
+
+    @Transactional
     public String getLaunchUrl(Long id, UUID userId) {
         MiniApp miniApp = miniAppRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("MiniApp을 찾을 수 없습니다"));

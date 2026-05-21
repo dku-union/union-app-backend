@@ -137,6 +137,17 @@ public class MiniAppController {
         return ResponseEntity.ok(response);
     }
 
+    @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('PUBLISHER') or hasRole('ADMIN')")
+    public ResponseEntity<MiniAppResponseDto> updateMiniApp(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateMiniAppRequestDto request,
+            @AuthenticationPrincipal JwtUserPrincipal principal
+    ) {
+        MiniAppResponseDto response = miniAppService.updateMeta(id, principal.userId(), request.name(), request.description());
+        return ResponseEntity.ok(response);
+    }
+
     @PatchMapping("/{id}/icon")
     @PreAuthorize("hasRole('PUBLISHER')")
     public ResponseEntity<MiniAppResponseDto> updateIcon(
