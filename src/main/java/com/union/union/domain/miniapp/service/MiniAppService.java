@@ -63,6 +63,10 @@ public class MiniAppService {
         MiniAppCategory category = miniAppCategoryRepository.findById(request.categoryId())
                 .orElseThrow(() -> new EntityNotFoundException("카테고리를 찾을 수 없습니다"));
 
+        String tags = (request.keywords() != null && !request.keywords().isEmpty())
+                ? String.join(",", request.keywords())
+                : null;
+
         MiniApp miniApp = MiniApp.builder()
                 .name(request.name())
                 .description(request.description())
@@ -70,6 +74,9 @@ public class MiniAppService {
                 .category(category)
                 .workspace(workspace)
                 .status(MiniAppStatus.PENDING)
+                .appId(request.appId())
+                .tags(tags)
+                .permissions(request.permissions())
                 .build();
 
         miniAppRepository.save(miniApp);
