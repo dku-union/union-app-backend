@@ -1,6 +1,7 @@
 package com.union.union.domain.miniapp.controller;
 
 import com.union.union.domain.miniapp.dto.*;
+import com.union.union.domain.miniapp.repository.MiniAppCategoryRepository;
 import com.union.union.domain.miniapp.service.MiniAppSearchService;
 import com.union.union.domain.miniapp.service.MiniAppService;
 import com.union.union.global.infra.gcs.dto.GcsSignedUrlResponseDto;
@@ -30,6 +31,16 @@ public class MiniAppController {
 
     private final MiniAppService miniAppService;
     private final MiniAppSearchService miniAppSearchService;
+    private final MiniAppCategoryRepository miniAppCategoryRepository;
+
+    @GetMapping("/categories")
+    public ResponseEntity<List<MiniAppCategoryResponseDto>> getCategories() {
+        List<MiniAppCategoryResponseDto> response = miniAppCategoryRepository.findByIsActiveTrue()
+                .stream()
+                .map(MiniAppCategoryResponseDto::from)
+                .toList();
+        return ResponseEntity.ok(response);
+    }
 
     @PostMapping
     @PreAuthorize("hasRole('PUBLISHER')")

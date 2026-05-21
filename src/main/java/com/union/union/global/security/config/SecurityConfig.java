@@ -69,6 +69,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/banners").permitAll()
 
                 // MiniApp endpoints (Public)
+                .requestMatchers(HttpMethod.GET, "/mini-apps/categories").permitAll()
                 .requestMatchers(HttpMethod.GET, "/mini-apps").permitAll()
                 .requestMatchers(HttpMethod.GET, "/mini-apps/popular").permitAll()
                 .requestMatchers(HttpMethod.GET, "/mini-apps/discovery").permitAll()
