@@ -2,6 +2,7 @@ package com.union.union.domain.notification.repository;
 
 import com.union.union.domain.notification.entity.UserFcmToken;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -18,5 +19,13 @@ public interface UserFcmTokenRepository extends JpaRepository<UserFcmToken, Long
 
     Optional<UserFcmToken> findByToken(String token);
 
-    void deleteByToken(String token);
+    Optional<UserFcmToken> findByUser_IdAndDeviceId(UUID userId, String deviceId);
+
+    @Modifying
+    @Query("DELETE FROM UserFcmToken t WHERE t.token = :token")
+    void deleteByToken(@Param("token") String token);
+
+    @Modifying
+    @Query("DELETE FROM UserFcmToken t WHERE t.user.id = :userId AND t.deviceId = :deviceId")
+    void deleteByUserIdAndDeviceId(@Param("userId") UUID userId, @Param("deviceId") String deviceId);
 }

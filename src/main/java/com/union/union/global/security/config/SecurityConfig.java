@@ -91,8 +91,11 @@ public class SecurityConfig {
                 // Admin endpoints
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
 
-                // Notification (FCM token 등록/삭제)
+                // Notification
                 .requestMatchers("/notifications/token").authenticated()
+                .requestMatchers("/notifications/inbox/**").authenticated()
+                .requestMatchers("/notifications/inbox").authenticated()
+                .requestMatchers("/notifications/unread-count").authenticated()
 
                 // All other endpoints require authentication
                 .anyRequest().authenticated()
