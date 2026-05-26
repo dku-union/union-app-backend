@@ -115,6 +115,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/users/me/miniapps/**").authenticated()
                 .requestMatchers("/api/v1/users/me/subscriptions").authenticated()
 
+                // Report
+                .requestMatchers(HttpMethod.POST, "/reports").authenticated()
+
                 // All other endpoints require authentication
                 .anyRequest().authenticated()
             )
