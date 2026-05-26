@@ -97,6 +97,9 @@ public class SecurityConfig {
                 .requestMatchers("/notifications/inbox").authenticated()
                 .requestMatchers("/notifications/unread-count").authenticated()
 
+                // Report
+                .requestMatchers(HttpMethod.POST, "/reports").authenticated()
+
                 // All other endpoints require authentication
                 .anyRequest().authenticated()
             )
