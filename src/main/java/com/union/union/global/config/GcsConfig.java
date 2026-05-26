@@ -13,12 +13,14 @@ import java.io.IOException;
 @Configuration
 public class GcsConfig {
 
-    @Value("${spring.cloud.gcp.storage.credentials.location}")
+    @Value("${spring.cloud.gcp.storage.credentials.location:}")
     private Resource credentialsLocation;
 
     @Bean
     public Storage storage() throws IOException {
-        GoogleCredentials credentials = GoogleCredentials.fromStream(credentialsLocation.getInputStream());
+        GoogleCredentials credentials = (credentialsLocation != null && credentialsLocation.exists())
+                ? GoogleCredentials.fromStream(credentialsLocation.getInputStream())
+                : GoogleCredentials.getApplicationDefault();
         return StorageOptions.newBuilder()
                 .setCredentials(credentials)
                 .build()

@@ -1,0 +1,11 @@
+[
+  {
+    "origin": [
+      "https://union-phi.vercel.app",
+      "http://localhost:3000"
+    ],
+    "method": ["PUT", "GET"],
+    "responseHeader": ["Content-Type"],
+    "maxAgeSeconds": 3600
+  }
+]

@@ -54,6 +54,14 @@ public class MiniAppService {
     private final MiniAppCacheService miniAppCacheService;
     private final SubscriptionService subscriptionService;
 
+    /**
+     * appId 중복 여부 확인. Dashboard 등록 폼의 실시간 체크에서 호출.
+     * race condition 은 등록 시 unique 제약이 최종 보루.
+     */
+    public boolean isAppIdAvailable(String appId) {
+        return !miniAppRepository.existsByAppId(appId);
+    }
+
     @Transactional
     @CacheEvict(value = "miniApps", allEntries = true)
     public MiniAppResponseDto register(MiniAppRegisterRequestDto request, UUID publisherId) {
@@ -64,6 +72,10 @@ public class MiniAppService {
 
         MiniAppCategory category = miniAppCategoryRepository.findById(request.categoryId())
                 .orElseThrow(() -> new EntityNotFoundException("카테고리를 찾을 수 없습니다"));
+
+        if (miniAppRepository.existsByAppId(request.appId())) {
+            throw new IllegalArgumentException("이미 사용 중인 appId 입니다: " + request.appId());
+        }
 
         String tags = (request.keywords() != null && !request.keywords().isEmpty())
                 ? String.join(",", request.keywords())

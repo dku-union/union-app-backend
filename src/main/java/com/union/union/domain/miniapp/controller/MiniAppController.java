@@ -42,6 +42,19 @@ public class MiniAppController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * appId 사용 가능 여부 조회. Dashboard 등록 폼의 실시간 중복 체크에서 호출.
+     * 등록 직전 race condition 은 register() 의 unique 제약이 최종 보루.
+     */
+    @GetMapping("/check-app-id")
+    @PreAuthorize("hasRole('PUBLISHER')")
+    public ResponseEntity<Map<String, Boolean>> checkAppIdAvailable(
+            @RequestParam("appId") String appId
+    ) {
+        boolean available = miniAppService.isAppIdAvailable(appId);
+        return ResponseEntity.ok(Map.of("available", available));
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('PUBLISHER')")
     public ResponseEntity<MiniAppResponseDto> register(

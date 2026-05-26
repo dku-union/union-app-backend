@@ -45,10 +45,10 @@ public class MiniApp extends BaseEntity {
 
     /**
      * 미니앱 식별자 (reverse-domain, e.g. "com.union.soccer").
-     * union.config.json 의 appId 와 동일. Analytics 이벤트 매핑 키.
-     * 기존 앱은 null 허용, 신규 앱은 non-null.
+     * union.config.json 의 appId 와 동일. Analytics 이벤트 매핑 키 + 알림 발송 targetAppId.
+     * 모든 신규/기존 앱에 필수 (레거시 row 는 com.union.legacy-{id} placeholder 로 마이그레이션됨).
      */
-    @Column(name = "app_id", unique = true, length = 100)
+    @Column(name = "app_id", unique = true, length = 100, nullable = false)
     private String appId;
 
     @Column(name = "searchable_name", length = 300)
