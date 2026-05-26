@@ -95,7 +95,8 @@ public class AppVersionService {
                 version.getMiniApp().getId(),
                 version.getMiniApp().getName(),
                 version.getVersionNumber(),
-                signedUrl);
+                signedUrl,
+                version.getMiniApp().getAppId());
     }
 
     @Transactional

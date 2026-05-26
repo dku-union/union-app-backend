@@ -1,14 +1,21 @@
 package com.union.union.domain.notification.service;
 
+import com.union.union.domain.miniapp.entity.MiniApp;
+import com.union.union.domain.miniapp.repository.MiniAppRepository;
 import com.union.union.domain.notification.dto.InboxResponseDto;
+import com.union.union.domain.notification.dto.PublisherSendNotificationRequest;
+import com.union.union.domain.notification.dto.PublisherSendNotificationResponse;
 import com.union.union.domain.notification.dto.RegisterTokenRequestDto;
 import com.union.union.domain.notification.dto.SendNotificationRequestDto;
 import com.union.union.domain.notification.entity.*;
 import com.union.union.domain.notification.repository.*;
 import com.union.union.domain.publisher.entity.Publisher;
 import com.union.union.domain.publisher.repository.PublisherRepository;
+import com.union.union.domain.subscription.entity.MiniAppSubscription;
+import com.union.union.domain.subscription.repository.MiniAppSubscriptionRepository;
 import com.union.union.domain.user.entity.User;
 import com.union.union.domain.user.repository.UserRepository;
+import com.union.union.domain.workspace.service.WorkspaceAuthorizationService;
 import com.union.union.global.common.exception.EntityNotFoundException;
 import com.union.union.global.infra.fcm.FcmService;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +44,9 @@ public class NotificationService {
     private final PublisherRepository publisherRepository;
     private final UserRepository userRepository;
     private final FcmService fcmService;
+    private final MiniAppRepository miniAppRepository;
+    private final MiniAppSubscriptionRepository subscriptionRepository;
+    private final WorkspaceAuthorizationService workspaceAuthorizationService;
 
     // ── 토큰 등록/삭제 ──────────────────────────────────────────
 
@@ -176,6 +186,89 @@ public class NotificationService {
         List<String> tokens = userFcmTokenRepository.findTokensByUserId(userId);
         fcmService.sendMulticast(tokens, title, body);
     }
+
+    // ── Publisher 발송 ───────────────────────────────────────────
+
+    public PublisherSendNotificationResponse sendByPublisher(
+            UUID senderPublisherId,
+            PublisherSendNotificationRequest request
+    ) {
+        MiniApp miniApp = miniAppRepository.findByAppId(request.targetAppId())
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "MiniApp을 찾을 수 없습니다. targetAppId=" + request.targetAppId()));
+
+        // publisher가 미니앱 소유 워크스페이스의 멤버인지 검증 → 아니면 403
+        workspaceAuthorizationService.validateMembership(
+                miniApp.getWorkspace().getWorkspaceId(), senderPublisherId);
+
+        NotificationCampaign campaign = campaignRepository.save(NotificationCampaign.builder()
+                .senderType(SenderType.MINIAPP)
+                .senderMiniappId(miniApp.getId())
+                .senderPublisherId(senderPublisherId)
+                .category(request.category())
+                .title(request.title())
+                .body(request.body())
+                .imageUrl(request.imageUrl())
+                .deeplinkType(request.deeplinkType())
+                .targetAppId(miniApp.getAppId())
+                .targetPath(request.targetPath())
+                .targetWebUrl(request.targetWebUrl())
+                .targetInternalRoute(request.targetInternalRoute())
+                .build());
+
+        FanOutStats stats = fanOutToSubscribers(campaign, miniApp.getId());
+
+        log.info("Publisher 발송 완료. campaignId={}, miniAppId={}, subscribers={}, tokens={}",
+                campaign.getId(), miniApp.getId(), stats.subscriberCount(), stats.tokenCount());
+
+        return new PublisherSendNotificationResponse(
+                campaign.getId(),
+                stats.tokenCount(),
+                stats.subscriberCount());
+    }
+
+    /**
+     * 특정 미니앱의 활성 구독자에게 fan-out.
+     * NotificationInbox row 생성 + FCM 발송. 페이지 단위 (chunk=1000).
+     */
+    protected FanOutStats fanOutToSubscribers(NotificationCampaign campaign, Long miniAppId) {
+        int page = 0;
+        int chunkSize = 1000;
+        long totalSubscribers = 0;
+        long totalTokens = 0;
+        Map<String, String> data = buildFcmData(campaign);
+
+        while (true) {
+            List<MiniAppSubscription> subscriptions = subscriptionRepository
+                    .findActiveSubscribersOfMiniApp(miniAppId, PageRequest.of(page, chunkSize));
+            if (subscriptions.isEmpty()) break;
+
+            List<NotificationInbox> inboxes = subscriptions.stream()
+                    .map(s -> NotificationInbox.builder()
+                            .user(s.getUser())
+                            .campaign(campaign)
+                            .build())
+                    .collect(Collectors.toList());
+            inboxRepository.saveAll(inboxes);
+
+            List<String> tokens = subscriptions.stream()
+                    .flatMap(s -> userFcmTokenRepository.findTokensByUserId(s.getUser().getId()).stream())
+                    .collect(Collectors.toList());
+
+            totalSubscribers += subscriptions.size();
+            totalTokens += tokens.size();
+
+            if (!tokens.isEmpty()) {
+                fcmService.sendMulticastWithData(tokens, campaign.getTitle(), campaign.getBody(), data);
+            }
+
+            if (subscriptions.size() < chunkSize) break;
+            page++;
+        }
+        return new FanOutStats(totalSubscribers, totalTokens);
+    }
+
+    private record FanOutStats(long subscriberCount, long tokenCount) {}
 
     private Map<String, String> buildFcmData(NotificationCampaign campaign) {
         Map<String, String> data = new HashMap<>();

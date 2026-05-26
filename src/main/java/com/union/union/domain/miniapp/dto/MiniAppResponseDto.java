@@ -16,6 +16,7 @@ public record MiniAppResponseDto(
     MiniAppStatus status,
     String tags,
     List<PermissionScope> permissions,
+    String appId,
     LocalDateTime createdAt
 ) {
     public static MiniAppResponseDto from(MiniApp miniApp) {
@@ -28,6 +29,7 @@ public record MiniAppResponseDto(
             miniApp.getStatus(),
             miniApp.getTags(),
             miniApp.getPermissions(),
+            miniApp.getAppId(),
             miniApp.getCreatedAt()
         );
     }
