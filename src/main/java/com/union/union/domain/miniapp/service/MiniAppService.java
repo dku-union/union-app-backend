@@ -14,6 +14,7 @@ import com.union.union.domain.miniapp.usage.dto.MiniAppUsageStatsDto;
 import com.union.union.domain.miniapp.usage.dto.PublisherStatisticsResponseDto;
 import com.union.union.domain.miniapp.usage.entity.MiniAppUsage;
 import com.union.union.domain.miniapp.usage.repository.MiniAppUsageRepository;
+import com.union.union.domain.subscription.service.SubscriptionService;
 import com.union.union.domain.user.entity.User;
 import com.union.union.domain.user.repository.UserRepository;
 import com.union.union.domain.workspace.entity.Workspace;
@@ -51,6 +52,7 @@ public class MiniAppService {
     private final GcsService gcsService;
     private final MiniAppSearchService miniAppSearchService;
     private final MiniAppCacheService miniAppCacheService;
+    private final SubscriptionService subscriptionService;
 
     @Transactional
     @CacheEvict(value = "miniApps", allEntries = true)
@@ -243,6 +245,9 @@ public class MiniAppService {
                 .orElseThrow(() -> new EntityNotFoundException("배포된 버전이 없습니다"));
 
         miniAppUsageRepository.save(MiniAppUsage.create(userId, id));
+
+        // 첫 실행 시 자동 구독 (멱등). 알림 발송 대상 산정 기준.
+        subscriptionService.autoSubscribe(userId, id);
 
         return gcsService.getCdnDownloadUrl(deployedVersion.getBuildFileUrl());
     }

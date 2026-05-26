@@ -1,5 +1,6 @@
 package com.union.union.global.security.config;
 
+import com.union.union.global.security.apikey.ApiKeyAuthenticationFilter;
 import com.union.union.global.security.jwt.JwtAuthenticationFilter;
 import com.union.union.global.security.ratelimit.RateLimitFilter;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final ApiKeyAuthenticationFilter apiKeyAuthenticationFilter;
     private final RateLimitFilter rateLimitFilter;
     private final JwtAuthenticationEntryPoint authenticationEntryPoint;
     private final JwtAccessDeniedHandler accessDeniedHandler;
@@ -97,11 +99,28 @@ public class SecurityConfig {
                 .requestMatchers("/notifications/inbox").authenticated()
                 .requestMatchers("/notifications/unread-count").authenticated()
 
+                // Publisher 알림 발송 (API Key 인증)
+                .requestMatchers(HttpMethod.POST, "/api/v1/publishers/notifications")
+                    .hasAuthority("SCOPE_notifications:send")
+
+                // Publisher 알림 발송 (대시보드 JWT 인증, 테스트용)
+                .requestMatchers(HttpMethod.POST, "/api/v1/publishers/me/notifications")
+                    .hasRole("PUBLISHER")
+
+                // Publisher API Key 관리 (JWT 인증, PUBLISHER 권한)
+                .requestMatchers("/api/v1/publishers/me/api-keys/**").hasRole("PUBLISHER")
+                .requestMatchers("/api/v1/publishers/me/api-keys").hasRole("PUBLISHER")
+
+                // 사용자 미니앱 구독 (JWT 인증)
+                .requestMatchers("/api/v1/users/me/miniapps/**").authenticated()
+                .requestMatchers("/api/v1/users/me/subscriptions").authenticated()
+
                 // All other endpoints require authentication
                 .anyRequest().authenticated()
             )
             .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterAfter(jwtAuthenticationFilter, RateLimitFilter.class);
+            .addFilterAfter(apiKeyAuthenticationFilter, RateLimitFilter.class)
+            .addFilterAfter(jwtAuthenticationFilter, ApiKeyAuthenticationFilter.class);
 
         return http.build();
     }
