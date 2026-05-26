@@ -46,3 +46,7 @@ src/main/resources/application-local.yml
 *.log
 *-key.json
 dump.rdb
+# Cloud Run 배포 정의 — prod secret 평문 포함, 로컬에서만 보관
+cloud-run.yaml
+# GCP 인프라 운영 문서 — project ID/VPC 내부 정보 포함, 로컬에서만 보관
+INFRA.md

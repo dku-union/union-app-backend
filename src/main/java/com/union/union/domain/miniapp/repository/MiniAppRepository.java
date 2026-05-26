@@ -102,4 +102,10 @@ public interface MiniAppRepository extends JpaRepository<MiniApp, Long> {
      * Analytics 이벤트 수신 시 APPROVED 앱 여부 검증에 사용.
      */
     boolean existsByAppIdAndStatus(String appId, MiniAppStatus status);
+
+    /**
+     * appId 중복 여부 확인 (count 쿼리, 경량).
+     * Dashboard 등록 폼의 실시간 중복 체크에 사용.
+     */
+    boolean existsByAppId(String appId);
 }

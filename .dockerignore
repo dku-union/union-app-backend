@@ -1,0 +1,17 @@
+.git
+.gradle
+build
+out
+.idea
+.vscode
+.claude
+*.iml
+*.log
+dump.rdb
+.env
+.env.example
+union-storage-key.json
+src/main/resources/application-local.yml
+docs
+README.md
+.DS_Store
