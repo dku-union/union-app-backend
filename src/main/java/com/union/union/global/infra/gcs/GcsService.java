@@ -126,6 +126,28 @@ public class GcsService {
     }
 
     /**
+     * 유저 프로필 이미지 업로드용 GCS Signed PUT URL (5분) + 공개 다운로드 URL.
+     * 배너 버킷(public read)의 profiles/{userId}/ 경로에 저장.
+     */
+    public GcsSignedUrlResponseDto getProfileImageUploadUrl(UUID userId, String filename) {
+        String ext = filename.contains(".") ? filename.substring(filename.lastIndexOf('.')) : "";
+        String blobName = String.format("profiles/%s/%s%s", userId, UUID.randomUUID(), ext);
+
+        BlobInfo blobInfo = BlobInfo.newBuilder(bannerBucketName, blobName).build();
+
+        URL signedUrl = storage.signUrl(
+                blobInfo,
+                5,
+                TimeUnit.MINUTES,
+                Storage.SignUrlOption.httpMethod(HttpMethod.PUT),
+                Storage.SignUrlOption.withV4Signature()
+        );
+
+        String publicUrl = "https://storage.googleapis.com/" + bannerBucketName + "/" + blobName;
+        return new GcsSignedUrlResponseDto(signedUrl.toString(), publicUrl);
+    }
+
+    /**
      * CDN Signed URL 조회 (Redis 캐시 → 미스 시 생성)
      */
     public String getCdnDownloadUrl(String objectPath) {
