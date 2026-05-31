@@ -1,8 +1,13 @@
 package com.union.union.domain.user.controller;
 
+import com.union.union.domain.user.dto.ProfileImageUploadUrlRequestDto;
+import com.union.union.domain.user.dto.UpdateNicknameRequestDto;
+import com.union.union.domain.user.dto.UpdateProfileImageRequestDto;
 import com.union.union.domain.user.entity.User;
 import com.union.union.domain.user.service.UserService;
+import com.union.union.global.infra.gcs.dto.GcsSignedUrlResponseDto;
 import com.union.union.global.security.jwt.JwtUserPrincipal;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,6 +28,39 @@ public class UserController {
     public ResponseEntity<UserResponse> getMe(@AuthenticationPrincipal JwtUserPrincipal principal) {
         User user = userService.getUser(principal.userId());
         return ResponseEntity.ok(UserResponse.from(user));
+    }
+
+    @PatchMapping("/me")
+    public ResponseEntity<UserResponse> updateNickname(
+            @Valid @RequestBody UpdateNicknameRequestDto request,
+            @AuthenticationPrincipal JwtUserPrincipal principal
+    ) {
+        User user = userService.updateNickname(principal.userId(), request);
+        return ResponseEntity.ok(UserResponse.from(user));
+    }
+
+    @PostMapping("/me/profile-image/upload-url")
+    public ResponseEntity<GcsSignedUrlResponseDto> getProfileImageUploadUrl(
+            @Valid @RequestBody ProfileImageUploadUrlRequestDto request,
+            @AuthenticationPrincipal JwtUserPrincipal principal
+    ) {
+        GcsSignedUrlResponseDto response = userService.getProfileImageUploadUrl(principal.userId(), request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/me/profile-image")
+    public ResponseEntity<UserResponse> updateProfileImage(
+            @Valid @RequestBody UpdateProfileImageRequestDto request,
+            @AuthenticationPrincipal JwtUserPrincipal principal
+    ) {
+        User user = userService.updateProfileImage(principal.userId(), request);
+        return ResponseEntity.ok(UserResponse.from(user));
+    }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> withdrawMe(@AuthenticationPrincipal JwtUserPrincipal principal) {
+        userService.withdrawMe(principal.userId());
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}")
@@ -47,10 +85,11 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    public record UserResponse(UUID id, String email, String nickname, String universityName, boolean isVerified) {
+    public record UserResponse(UUID id, String email, String nickname, String profileImage,
+                               String universityName, boolean isVerified) {
         public static UserResponse from(User user) {
             return new UserResponse(
-                    user.getId(), user.getEmail(), user.getNickname(),
+                    user.getId(), user.getEmail(), user.getNickname(), user.getProfileImage(),
                     user.getUniversityName(), user.isVerified()
             );
         }

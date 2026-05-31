@@ -72,4 +72,11 @@ public class Report extends BaseEntity {
         this.status = ReportStatus.PENDING;
         this.actionTaken = "NONE";
     }
+
+    public void process(UUID adminId, ReportStatus newStatus, String actionTaken) {
+        this.status = newStatus;
+        this.reviewedBy = adminId;
+        this.reviewedAt = java.time.LocalDateTime.now();
+        if (actionTaken != null) this.actionTaken = actionTaken;
+    }
 }
