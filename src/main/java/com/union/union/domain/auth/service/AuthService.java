@@ -122,11 +122,24 @@ public class AuthService {
     }
 
     @Transactional
-    public void logout(UUID userId) {
+    public void logout(UUID userId, String refreshToken) {
         userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다"));
-        refreshTokenRepository.revokeAllByUserId(userId);
-        log.info("로그아웃. userId={}", userId);
+
+        if (refreshToken != null && !refreshToken.isBlank()) {
+            // 해당 기기의 refresh 토큰만 무효화한다.
+            // - 다른 기기 세션을 끊지 않는다(기기 단위 로그아웃)
+            // - 로그아웃 직후 재로그인이 발생해도 새 세션의 토큰은 건드리지 않는다(전체 무효화 race 방지)
+            // 본인 토큰일 때만 처리하며, 일치하지 않으면 무시한다(전체 무효화 폴백으로 빠지지 않음).
+            refreshTokenRepository.findByToken(refreshToken)
+                    .filter(rt -> rt.getUser().getId().equals(userId))
+                    .ifPresent(RefreshToken::revoke);
+            log.info("로그아웃(기기 단위). userId={}", userId);
+        } else {
+            // 토큰 미제공(구버전 클라이언트) → 전체 세션 무효화 폴백
+            refreshTokenRepository.revokeAllByUserId(userId);
+            log.info("로그아웃(전체). userId={}", userId);
+        }
     }
 
     private TokenResponseDto issueTokens(User user) {
