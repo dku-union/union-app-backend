@@ -85,7 +85,9 @@ public class AuthService {
         return issueTokens(user);
     }
 
-    @Transactional
+    // refresh 거부 시에도 의도된 토큰 무효화(재사용 감지/만료/비활성 계정 revoke)는 보존해야 한다.
+    // InvalidRefreshTokenException(RuntimeException) 으로 인한 롤백을 막아 revoke 가 커밋되게 한다.
+    @Transactional(noRollbackFor = InvalidRefreshTokenException.class)
     public TokenResponseDto refresh(RefreshRequestDto request) {
         RefreshToken storedToken = refreshTokenRepository.findByToken(request.refreshToken())
                 .orElseThrow(() -> new InvalidRefreshTokenException("유효하지 않은 refresh token입니다"));
