@@ -45,6 +45,9 @@ out/
 src/main/resources/application-local.yml
 *.log
 *-key.json
+service-account*.json
+# FCM 수동 발송 테스트 (로컬 전용 — service account 키/의존성 포함)
+scripts/fcm-test/node_modules/
 dump.rdb
 # Cloud Run 배포 정의 — prod secret 평문 포함, 로컬에서만 보관
 cloud-run.yaml
