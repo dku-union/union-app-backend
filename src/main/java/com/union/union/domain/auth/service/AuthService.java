@@ -102,10 +102,21 @@ public class AuthService {
             throw new InvalidRefreshTokenException("세션이 만료되었습니다. 다시 로그인해주세요.");
         }
 
+        User user = storedToken.getUser();
+
+        // 비활성(탈퇴/정지) 계정은 토큰 재발급 차단.
+        // login() 과 달리 refresh 는 그동안 상태 검사가 없어, 정지된 사용자(suspend() 는 토큰을
+        // revoke 하지 않음)나 탈퇴 직후 race 로 살아남은 토큰으로 access 토큰을 계속 찍어낼 수 있었다.
+        // 이 단일 choke point 에서 막는다(매 요청 DB 조회 없이).
+        if (user.getUserStatus() != User.UserStatus.ACTIVE) {
+            log.warn("비활성 계정의 토큰 갱신 시도 차단. userId={}, status={}", user.getId(), user.getUserStatus());
+            refreshTokenRepository.revokeAllByUserId(user.getId());
+            throw new InvalidRefreshTokenException("비활성화된 계정입니다. 다시 로그인해주세요.");
+        }
+
         // Rotation: 기존 토큰 무효화
         storedToken.revoke();
 
-        User user = storedToken.getUser();
         log.info("토큰 갱신. userId={}", user.getId());
         return issueTokens(user);
     }
