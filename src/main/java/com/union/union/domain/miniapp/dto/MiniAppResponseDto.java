@@ -28,7 +28,7 @@ public record MiniAppResponseDto(
             miniApp.getWorkspace().getName(),
             miniApp.getStatus(),
             miniApp.getTags(),
-            miniApp.getPermissions(),
+            PermissionScope.sanitize(miniApp.getPermissions()),
             miniApp.getAppId(),
             miniApp.getCreatedAt()
         );
