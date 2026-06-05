@@ -20,6 +20,7 @@ import com.union.union.domain.user.repository.UserRepository;
 import com.union.union.domain.workspace.entity.Workspace;
 import com.union.union.domain.workspace.repository.WorkspaceRepository;
 import com.union.union.domain.workspace.service.WorkspaceAuthorizationService;
+import com.union.union.global.common.exception.BadRequestException;
 import com.union.union.global.common.exception.EntityNotFoundException;
 import com.union.union.global.common.exception.UnauthorizedAccessException;
 import com.union.union.global.infra.gcs.GcsService;
@@ -75,6 +76,12 @@ public class MiniAppService {
 
         if (miniAppRepository.existsByAppId(request.appId())) {
             throw new IllegalArgumentException("이미 사용 중인 appId 입니다: " + request.appId());
+        }
+
+        // 관대 파서(PermissionScope.fromNullable)는 미지 스코프를 null 로 바인딩한다.
+        // 레거시 읽기 보호를 위한 leniency 이므로, 신규 등록 시점에는 조용히 삼키지 않고 명시적으로 거부한다.
+        if (request.permissions() != null && request.permissions().contains(null)) {
+            throw new BadRequestException("유효하지 않은 권한 스코프가 포함되어 있습니다");
         }
 
         String tags = (request.keywords() != null && !request.keywords().isEmpty())
