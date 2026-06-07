@@ -67,6 +67,9 @@ public class SecurityConfig {
                 // GET summary/events: 퍼블리셔 대시보드 (@PreAuthorize 로 세부 인가)
                 .requestMatchers(HttpMethod.GET, "/api/v1/analytics/**").authenticated()
 
+                // JWKS (Public) — publisher 백엔드가 미니앱 ID 토큰 검증용 공개키 조회
+                .requestMatchers(HttpMethod.GET, "/.well-known/jwks.json").permitAll()
+
                 // Banner endpoints (Public) — Home 캐러셀 노출용
                 .requestMatchers(HttpMethod.GET, "/banners").permitAll()
 

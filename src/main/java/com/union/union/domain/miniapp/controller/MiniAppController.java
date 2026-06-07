@@ -32,6 +32,7 @@ public class MiniAppController {
     private final MiniAppService miniAppService;
     private final MiniAppSearchService miniAppSearchService;
     private final MiniAppCategoryRepository miniAppCategoryRepository;
+    private final com.union.union.domain.miniapp.service.MiniAppIdTokenService miniAppIdTokenService;
 
     @GetMapping("/categories")
     public ResponseEntity<List<MiniAppCategoryResponseDto>> getCategories() {
@@ -95,6 +96,19 @@ public class MiniAppController {
     ) {
         String bundleUrl = miniAppService.getLaunchUrl(id, principal.userId());
         return ResponseEntity.ok(Map.of("bundleUrl", bundleUrl));
+    }
+
+    /**
+     * 미니앱(appId) 스코프로 사용자 ID 토큰(RS256)을 발급한다.
+     * native(iOS) 가 사용자 세션으로 인증해 호출하고, 반환된 ID 토큰을 미니앱(WebView)에 전달한다.
+     * publisher 자체 백엔드는 이 토큰을 JWKS 로 검증해 신원을 확인한다(세션 토큰은 노출되지 않음).
+     */
+    @PostMapping("/{id}/id-token")
+    public ResponseEntity<IdTokenResponseDto> issueIdToken(
+            @PathVariable Long id,
+            @AuthenticationPrincipal JwtUserPrincipal principal
+    ) {
+        return ResponseEntity.ok(miniAppIdTokenService.issue(id, principal.userId()));
     }
 
     @GetMapping("/discovery")

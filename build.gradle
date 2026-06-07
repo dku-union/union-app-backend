@@ -35,6 +35,9 @@ dependencies {
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 
+	// JWK 직렬화 (미니앱 ID 토큰 JWKS 공개키 출력용)
+	implementation 'com.nimbusds:nimbus-jose-jwt:9.40'
+
 	// GCS
 	implementation 'com.google.cloud:spring-cloud-gcp-starter-storage:5.1.2'
 

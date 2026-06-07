@@ -114,6 +114,18 @@ public class MiniAppPermissionService {
         return result;
     }
 
+    /**
+     * (d) 사용자가 해당 미니앱에 실제로 동의(granted=true)한 스코프 집합을 반환한다.
+     * ID 토큰 발급 시 어떤 신원 claim 을 담을지 결정하는 데 쓴다.
+     */
+    @Transactional(readOnly = true)
+    public Set<PermissionScope> getGrantedScopes(UUID userId, Long miniAppId) {
+        return permissionRepository.findByUserIdAndMiniAppId(userId, miniAppId).stream()
+                .filter(MiniAppUserPermission::isGranted)
+                .map(MiniAppUserPermission::getScope)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
     // --- helpers ---
 
     private Map<PermissionScope, Boolean> decisionMap(UUID userId, Long miniAppId) {
