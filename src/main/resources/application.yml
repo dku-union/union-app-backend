@@ -63,6 +63,14 @@ jwt:
 internal-jwt:
   secret: ${INTERNAL_JWT_SECRET:default-internal-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256}
 
+# 미니앱 ID 토큰(RS256). publisher 백엔드가 JWKS({issuer}/.well-known/jwks.json)로 검증한다.
+# private-key 미설정이면 발급/JWKS 가 비활성화된 채 기동(기존 prod 무중단). prod 는 IDTOKEN_PRIVATE_KEY 주입.
+idtoken:
+  issuer: ${IDTOKEN_ISSUER:http://localhost:8080}
+  expiration: 3600000            # 1시간
+  kid: ${IDTOKEN_KID:union-idtoken-1}
+  private-key: ${IDTOKEN_PRIVATE_KEY:}
+
 careernet:
   api:
     key: ${CAREERNET_API_KEY}
