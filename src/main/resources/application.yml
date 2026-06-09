@@ -1,0 +1,113 @@
+spring:
+  profiles:
+    active: local
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          timeout: 5000
+          connectiontimeout: 5000
+          writetimeout: 5000
+          starttls:
+            enable: true
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      pool-name: PostgresHikariPool
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+
+  jpa:
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        highlight_sql: true
+        default_batch_fetch_size: 1000
+
+  cloud:
+    gcp:
+      storage:
+        bucket: ${GCS_BUCKET_NAME:union-app-miniapps}
+
+banner:
+  bucket:
+    # 배너 이미지 전용 버킷. 사전에 GCP 콘솔에서 생성 + public read(allUsers:objectViewer) 필요.
+    name: ${BANNER_BUCKET_NAME:union-app-banners}
+
+jwt:
+  secret: ${JWT_SECRET:union-super-app-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256}
+  access-token-expiration: 1800000     # 30분
+  refresh-token-expiration: 1209600000  # 14일
+
+internal-jwt:
+  secret: ${INTERNAL_JWT_SECRET:default-internal-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256}
+
+# 미니앱 ID 토큰(RS256). publisher 백엔드가 JWKS({issuer}/.well-known/jwks.json)로 검증한다.
+# private-key 미설정이면 발급/JWKS 가 비활성화된 채 기동(기존 prod 무중단). prod 는 IDTOKEN_PRIVATE_KEY 주입.
+idtoken:
+  issuer: ${IDTOKEN_ISSUER:http://localhost:8080}
+  expiration: 3600000            # 1시간
+  kid: ${IDTOKEN_KID:union-idtoken-1}
+  private-key: ${IDTOKEN_PRIVATE_KEY:}
+
+careernet:
+  api:
+    key: ${CAREERNET_API_KEY}
+
+cdn:
+  base-url: ${CDN_BASE_URL}
+  key-name: ${CDN_KEY_NAME}
+  key-value: ${CDN_KEY_VALUE}
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+
+rate-limit:
+  login:
+    max-requests: 10
+    window-seconds: 60
+  signup:
+    max-requests: 5
+    window-seconds: 60
+  email-send:
+    max-requests: 3
+    window-seconds: 60
+  email-verify:
+    max-requests: 5
+    window-seconds: 60
+  publisher-email-send:
+    max-requests: 3
+    window-seconds: 60
+  publisher-email-verify:
+    max-requests: 5
+    window-seconds: 60
+
+token-cleanup:
+  refresh-token-cron: ${REFRESH_TOKEN_CLEANUP_CRON:0 0 4 * * *}
+
+universal-link:
+  base-url: ${UNIVERSAL_LINK_BASE_URL:union-app://test-app}
+
+firebase:
+  credential-path: ${FIREBASE_CREDENTIAL_PATH:}

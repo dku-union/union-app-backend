@@ -1,0 +1,20 @@
+# gcloud builds submit 업로드 제외 목록.
+# 빌드에 필요한 것은 gradle wrapper + build/settings.gradle + gradle/ + src/ 뿐이다.
+# 민감 파일(키)·로컬 설정·빌드 산출물은 업로드하지 않는다.
+.git
+.gradle
+build
+out
+.idea
+.vscode
+.claude
+scripts
+*.iml
+*.log
+dump.rdb
+.env
+.env.example
+union-storage-key.json
+src/main/resources/application-local.yml
+docs
+.DS_Store

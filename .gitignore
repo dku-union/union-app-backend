@@ -1,24 +1,55 @@
-# Compiled class file
-*.class
+HELP.md
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
 
-# Log file
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+.claude/
+
+### macOS ###
+.DS_Store
+
+### Secrets and Logs ###
+.env
+src/main/resources/application-local.yml
 *.log
-
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
-*.jar
-*.war
-*.nar
-*.ear
-*.zip
-*.tar.gz
-*.rar
-
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
-replay_pid*
+*-key.json
+service-account*.json
+# FCM 수동 발송 테스트 (로컬 전용 — service account 키/의존성 포함)
+scripts/fcm-test/node_modules/
+dump.rdb
+# Cloud Run 배포 정의 — prod secret 평문 포함, 로컬에서만 보관
+cloud-run.yaml
+# GCP 인프라 운영 문서 — project ID/VPC 내부 정보 포함, 로컬에서만 보관
+INFRA.md

@@ -1,0 +1,111 @@
+package com.union.union.domain.miniapp.repository;
+
+import com.union.union.domain.miniapp.entity.MiniApp;
+import com.union.union.domain.miniapp.entity.MiniAppCategory;
+import com.union.union.domain.miniapp.entity.MiniAppStatus;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+@Repository
+public interface MiniAppRepository extends JpaRepository<MiniApp, Long> {
+
+    @Override
+    @Query("SELECT m FROM MiniApp m JOIN FETCH m.workspace WHERE m.id = :id")
+    Optional<MiniApp> findById(@Param("id") Long id);
+
+    @Query("SELECT m FROM MiniApp m JOIN FETCH m.workspace WHERE m.status = :status")
+    List<MiniApp> findByStatus(@Param("status") MiniAppStatus status);
+
+    @Query("SELECT m FROM MiniApp m JOIN FETCH m.workspace " +
+           "WHERE m.status = :status AND m.id IN (" +
+           "  SELECT u.miniAppId FROM MiniAppUsage u GROUP BY u.miniAppId ORDER BY COUNT(u) DESC" +
+           ") ORDER BY (" +
+           "  SELECT COUNT(u2) FROM MiniAppUsage u2 WHERE u2.miniAppId = m.id" +
+           ") DESC")
+    List<MiniApp> findPopularMiniApps(@Param("status") MiniAppStatus status, Pageable pageable);
+
+    @Query("SELECT m FROM MiniApp m JOIN FETCH m.workspace WHERE m.workspace.workspaceId = :workspaceId")
+    List<MiniApp> findByWorkspace_WorkspaceId(@Param("workspaceId") UUID workspaceId);
+
+    /**
+     * 특정 publisher가 멤버인 모든 워크스페이스의 미니앱을 조회.
+     * iOS publisher 전용 화면("내가 업로드 한 앱")에서 사용.
+     */
+    @Query("SELECT DISTINCT m FROM MiniApp m " +
+           "JOIN FETCH m.workspace w " +
+           "JOIN WorkspaceMember wm ON wm.workspace.workspaceId = w.workspaceId " +
+           "WHERE wm.publisher.publisherId = :publisherId " +
+           "ORDER BY m.id DESC")
+    List<MiniApp> findByPublisherMembership(@Param("publisherId") UUID publisherId);
+
+    @Query("SELECT m FROM MiniApp m JOIN FETCH m.workspace " +
+           "WHERE m.status = :status AND m.id IN (" +
+           "  SELECT u.miniAppId FROM MiniAppUsage u " +
+           "  JOIN User user ON u.userId = user.id " +
+           "  WHERE user.universityName = :universityName " +
+           "  GROUP BY u.miniAppId ORDER BY COUNT(u) DESC" +
+           ")")
+    List<MiniApp> findRecommendedByUniversity(@Param("universityName") String universityName, @Param("status") MiniAppStatus status, Pageable pageable);
+
+    @Query("SELECT m FROM MiniApp m JOIN FETCH m.workspace " +
+           "WHERE m.status = :status AND m.id IN (" +
+           "  SELECT u.miniAppId FROM MiniAppUsage u " +
+           "  WHERE u.userId = :userId " +
+           "  GROUP BY u.miniAppId" +
+           ") ORDER BY (" +
+           "  SELECT MAX(u2.timestamp) FROM MiniAppUsage u2 WHERE u2.miniAppId = m.id AND u2.userId = :userId" +
+           ") DESC")
+    List<MiniApp> findRecentByUser(@Param("userId") UUID userId, @Param("status") MiniAppStatus status, Pageable pageable);
+
+    @Query("SELECT m FROM MiniApp m JOIN FETCH m.workspace " +
+           "WHERE m.status = :status " +
+           "ORDER BY m.id DESC")
+    List<MiniApp> findNewMiniApps(@Param("status") MiniAppStatus status, Pageable pageable);
+
+    @Query("SELECT m FROM MiniApp m JOIN FETCH m.workspace " +
+           "WHERE m.status = :status AND (" +
+           "LOWER(m.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(m.description) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(m.tags) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    List<MiniApp> searchByKeyword(@Param("keyword") String keyword, @Param("status") MiniAppStatus status, Pageable pageable);
+
+    @Query("SELECT m FROM MiniApp m JOIN FETCH m.workspace " +
+           "WHERE m.status = :status AND m.searchableName LIKE CONCAT(:prefix, '%')")
+    List<MiniApp> findByStatusAndSearchableNameStartingWith(@Param("status") MiniAppStatus status, @Param("prefix") String prefix, Pageable pageable);
+
+    @Query("SELECT m FROM MiniApp m JOIN FETCH m.workspace WHERE m.category = :category AND m.status = :status")
+    List<MiniApp> findByCategoryAndStatus(@Param("category") MiniAppCategory category, @Param("status") MiniAppStatus status, Pageable pageable);
+
+    @Query("SELECT m FROM MiniApp m JOIN FETCH m.workspace WHERE m.status = 'DEPLOYED' ORDER BY FUNCTION('RANDOM')")
+    List<MiniApp> findRandomMiniApps(Pageable pageable);
+
+    // ──────────────────────────────────────────────────────────────
+    // Analytics 연동
+    // ──────────────────────────────────────────────────────────────
+
+    /**
+     * appId (reverse-domain) 로 미니앱 조회.
+     * Analytics 이벤트 수신 시 앱 검증에 사용.
+     */
+    @Query("SELECT m FROM MiniApp m JOIN FETCH m.workspace WHERE m.appId = :appId")
+    java.util.Optional<MiniApp> findByAppId(@org.springframework.data.repository.query.Param("appId") String appId);
+
+    /**
+     * appId + status 조합으로 존재 여부 확인 (count 쿼리, 경량).
+     * Analytics 이벤트 수신 시 APPROVED 앱 여부 검증에 사용.
+     */
+    boolean existsByAppIdAndStatus(String appId, MiniAppStatus status);
+
+    /**
+     * appId 중복 여부 확인 (count 쿼리, 경량).
+     * Dashboard 등록 폼의 실시간 중복 체크에 사용.
+     */
+    boolean existsByAppId(String appId);
+}
