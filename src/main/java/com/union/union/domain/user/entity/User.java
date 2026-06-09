@@ -71,6 +71,16 @@ public class User extends BaseEntity {
         this.userStatus = UserStatus.WITHDRAWN;
     }
 
+    /**
+     * 탈퇴 시 unique 제약이 걸린 email 을 해제(tombstone 치환)해 동일 이메일로 재가입할 수 있게 한다.
+     * 탈퇴는 영구 조치이므로 원본 email 은 보존하지 않으며, 프로필 이미지 참조도 함께 비운다.
+     * id 기반 tombstone 이라 항상 유일하다.
+     */
+    public void anonymizeOnWithdrawal() {
+        this.email = "withdrawn+" + this.id + "@deleted.union.app";
+        this.profileImage = null;
+    }
+
     public void updateRole(Role role) {
         this.role = role;
     }

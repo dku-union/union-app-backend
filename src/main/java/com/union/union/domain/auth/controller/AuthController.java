@@ -36,8 +36,11 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@AuthenticationPrincipal JwtUserPrincipal principal) {
-        authService.logout(principal.userId());
+    public ResponseEntity<Void> logout(
+            @RequestBody(required = false) LogoutRequestDto request,
+            @AuthenticationPrincipal JwtUserPrincipal principal
+    ) {
+        authService.logout(principal.userId(), request != null ? request.refreshToken() : null);
         return ResponseEntity.noContent().build();
     }
 }

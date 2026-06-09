@@ -275,7 +275,15 @@ public class NotificationService {
         data.put("campaignId", String.valueOf(campaign.getId()));
         data.put("category", campaign.getCategory().name());
         data.put("deeplinkType", campaign.getDeeplinkType().name());
-        if (campaign.getTargetAppId() != null) data.put("appId", campaign.getTargetAppId());
+        if (campaign.getTargetAppId() != null) {
+            data.put("appId", campaign.getTargetAppId());
+            // MINIAPP 딥링크는 iOS가 미니앱 launch API(/mini-apps/{Long id}/launch)를 호출해야 하므로,
+            // appId(String) 외에 미니앱 DB id 도 동봉한다. iOS 는 추가 조회 없이 바로 미니앱을 연다.
+            if (campaign.getDeeplinkType() == DeeplinkType.MINIAPP) {
+                miniAppRepository.findByAppId(campaign.getTargetAppId())
+                        .ifPresent(app -> data.put("miniAppId", String.valueOf(app.getId())));
+            }
+        }
         if (campaign.getTargetPath() != null) data.put("path", campaign.getTargetPath());
         if (campaign.getTargetWebUrl() != null) data.put("webUrl", campaign.getTargetWebUrl());
         if (campaign.getTargetInternalRoute() != null) data.put("internalRoute", campaign.getTargetInternalRoute());

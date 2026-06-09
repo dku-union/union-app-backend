@@ -28,4 +28,12 @@ public interface UserFcmTokenRepository extends JpaRepository<UserFcmToken, Long
     @Modifying
     @Query("DELETE FROM UserFcmToken t WHERE t.user.id = :userId AND t.deviceId = :deviceId")
     void deleteByUserIdAndDeviceId(@Param("userId") UUID userId, @Param("deviceId") String deviceId);
+
+    /**
+     * 사용자의 모든 FCM 토큰을 일괄 삭제한다. 회원 탈퇴 시 호출 — 탈퇴한 기기로 푸시가 계속 가지 않도록.
+     * @return 삭제된 행 수
+     */
+    @Modifying
+    @Query("DELETE FROM UserFcmToken t WHERE t.user.id = :userId")
+    int deleteAllByUserId(@Param("userId") UUID userId);
 }
