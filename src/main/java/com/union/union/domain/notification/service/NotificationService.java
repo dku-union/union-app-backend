@@ -25,6 +25,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -216,10 +217,13 @@ public class NotificationService {
                 .targetInternalRoute(request.targetInternalRoute())
                 .build());
 
-        FanOutStats stats = fanOutToSubscribers(campaign, miniApp.getId());
+        boolean targeted = request.targetUserIds() != null && !request.targetUserIds().isEmpty();
+        FanOutStats stats = targeted
+                ? fanOutToTargetUsers(campaign, miniApp.getId(), request.targetUserIds())
+                : fanOutToSubscribers(campaign, miniApp.getId());
 
-        log.info("Publisher 발송 완료. campaignId={}, miniAppId={}, subscribers={}, tokens={}",
-                campaign.getId(), miniApp.getId(), stats.subscriberCount(), stats.tokenCount());
+        log.info("Publisher 발송 완료. campaignId={}, miniAppId={}, targeted={}, subscribers={}, tokens={}",
+                campaign.getId(), miniApp.getId(), targeted, stats.subscriberCount(), stats.tokenCount());
 
         return new PublisherSendNotificationResponse(
                 campaign.getId(),
@@ -266,6 +270,39 @@ public class NotificationService {
             page++;
         }
         return new FanOutStats(totalSubscribers, totalTokens);
+    }
+
+    /**
+     * 지정된 사용자에게만 발송. 각 사용자가 해당 미니앱의 활성 구독자(pushEnabled=true)인지
+     * 검증하고, 미구독/해지/푸시 꺼짐 사용자는 조용히 건너뛴다 (구독 여부 노출 방지).
+     */
+    protected FanOutStats fanOutToTargetUsers(
+            NotificationCampaign campaign, Long miniAppId, List<UUID> targetUserIds) {
+        Map<String, String> data = buildFcmData(campaign);
+        List<NotificationInbox> inboxes = new ArrayList<>();
+        List<String> tokens = new ArrayList<>();
+        long subscriberCount = 0;
+
+        for (UUID userId : targetUserIds.stream().distinct().toList()) {
+            MiniAppSubscription subscription = subscriptionRepository
+                    .findByUser_IdAndMiniApp_Id(userId, miniAppId)
+                    .filter(s -> s.isActive() && s.isPushEnabled())
+                    .orElse(null);
+            if (subscription == null) continue;
+
+            inboxes.add(NotificationInbox.builder()
+                    .user(subscription.getUser())
+                    .campaign(campaign)
+                    .build());
+            tokens.addAll(userFcmTokenRepository.findTokensByUserId(userId));
+            subscriberCount++;
+        }
+
+        inboxRepository.saveAll(inboxes);
+        if (!tokens.isEmpty()) {
+            fcmService.sendMulticastWithData(tokens, campaign.getTitle(), campaign.getBody(), data);
+        }
+        return new FanOutStats(subscriberCount, tokens.size());
     }
 
     private record FanOutStats(long subscriberCount, long tokenCount) {}
