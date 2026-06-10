@@ -1,9 +1,13 @@
-# Union App — Backend
+# union-app-backend
 
-대학생 대상 미니앱 슈퍼앱 플랫폼의 Spring Boot 백엔드 서버입니다.  
-퍼블리셔가 미니앱을 등록·배포하고, 일반 사용자가 탐색·실행하는 전체 플로우를 담당합니다.
+> **Union** 대학생 전용 미니앱 슈퍼앱 플랫폼의 Spring Boot 백엔드 서버입니다.  
+> 단국대학교 캡스톤디자인 프로젝트
 
 ---
+
+## 개요
+
+퍼블리셔가 미니앱을 등록·배포하고, 사용자가 탐색·실행하는 전체 플로우를 담당하는 REST API 서버입니다.
 
 ## 기술 스택
 
@@ -13,13 +17,12 @@
 | Framework | Spring Boot 3.4.3 |
 | Database | PostgreSQL (Neon) |
 | Cache | Redis (Lettuce) |
-| Storage | Google Cloud Storage + CDN |
-| Auth | JWT (JJWT 0.12.6) |
+| Storage | Google Cloud Storage + Cloud CDN |
+| Push 알림 | Firebase Cloud Messaging (FCM) |
+| Auth | JWT (JJWT 0.12.6), nimbus-jose-jwt |
 | Build | Gradle |
 
----
-
-## 아키텍처 개요
+## 아키텍처
 
 ```
 iOS 앱 (사용자)          Next.js 대시보드 (퍼블리셔/어드민)
@@ -35,75 +38,44 @@ iOS 앱 (사용자)          Next.js 대시보드 (퍼블리셔/어드민)
       (데이터 저장)  (캐시/토큰) (번들 파일)
 ```
 
----
-
 ## 도메인 구조
 
 ```
 src/main/java/com/union/union/domain/
-├── auth/          # 사용자 이메일 인증 + JWT 로그인
-├── publisher/     # 퍼블리셔 OTP 로그인 + 워크스페이스 관리
+├── auth/          # 이메일 인증 + JWT 로그인/로그아웃
+├── user/          # 사용자 계정 관리
 ├── miniapp/       # 미니앱 등록, 탐색, 검색, 추천
 ├── appversion/    # 버전 업로드 → 테스트 → 배포 파이프라인
 ├── review/        # 심사 요청 및 어드민 승인/반려
-├── analytics/     # 이벤트 수집 및 대시보드 통계
-├── user/          # 사용자 계정 관리
-├── workspace/     # 퍼블리셔 워크스페이스
-├── university/    # 대학 이메일 도메인 매핑
-└── dev/           # 개발용 시드 데이터 (local 프로필 전용)
+├── notification/  # FCM 푸시 + 알림 인박스
+└── analytics/     # 이벤트 수집 및 대시보드 통계
 ```
-
----
 
 ## 미니앱 배포 파이프라인
 
 ```
-[퍼블리셔 대시보드]
-        │
-        ▼
 POST /app-versions              → AppVersion 생성 (DRAFT)
-        │                          GCS Signed PUT URL 발급 (5분)
-        ▼
+                                  GCS Signed PUT URL 발급 (5분)
 PUT {signedUrl}                 → 브라우저에서 GCS 직접 업로드
-        │
-        ▼
-POST /app-versions/{id}/confirm → GCS 파일 존재 확인 → UPLOADED
-        │
-        ▼
-POST /app-versions/{id}/test-session  → Redis 토큰 발급 (10분)
-        │                               Universal Link 반환
-        ▼
-iOS 앱 QR 스캔 → GET /app-versions/test-bundle?token=
-        │         Redis 토큰 검증 → CDN Signed URL 반환
-        ▼
+POST /app-versions/{id}/confirm → 파일 존재 확인 → UPLOADED
+POST /app-versions/{id}/test-session  → Redis 토큰 발급 → Universal Link 반환
+iOS QR 스캔 → GET /app-versions/test-bundle?token=
+                                  Redis 토큰 검증 → CDN Signed URL 반환
 POST /app-versions/{id}/test-complete → testedAt 기록
-        │
-        ▼
 POST /reviews                   → 심사 요청 → IN_REVIEW
-        │
-        ▼
-[어드민 대시보드]
-GET  /reviews/pending           → 심사 목록 조회
-GET  /reviews/{id}/test-link    → 어드민 QR 테스트용 링크
-POST /reviews/versions/{versionId}/decision  → 승인(ACCEPTED) / 반려(REJECTED)
-        │
-        ▼
+[어드민 승인]
 POST /app-versions/{id}/deploy  → DEPLOYED
-        │
-        ▼
-iOS 앱 POST /mini-apps/{id}/launch → CDN Signed URL → 번들 실행
+POST /mini-apps/{id}/launch     → CDN Signed URL → 번들 실행
 ```
 
----
-
-## API 엔드포인트 목록
+## API 엔드포인트
 
 ### 인증
 
 | Method | Path | 설명 | 권한 |
 |--------|------|------|------|
 | POST | `/api/v1/auth/signup` | 사용자 회원가입 | - |
-| POST | `/api/v1/auth/login` | 사용자 로그인 | - |
+| POST | `/api/v1/auth/login` | 로그인 | - |
 | POST | `/api/v1/auth/refresh` | 토큰 갱신 | - |
 | POST | `/api/v1/auth/logout` | 로그아웃 | USER |
 | POST | `/auth/email/send` | 이메일 인증코드 발송 | - |
@@ -121,7 +93,7 @@ iOS 앱 POST /mini-apps/{id}/launch → CDN Signed URL → 번들 실행
 | GET | `/mini-apps/popular` | 인기 앱 | - |
 | GET | `/mini-apps/discovery` | 디스커버리 (피처드 + 카테고리) | - |
 | GET | `/mini-apps/recommendations` | 개인화 추천 | USER |
-| GET | `/mini-apps/search` | 검색 (인텐트 트래킹) | - |
+| GET | `/mini-apps/search` | 검색 | - |
 | GET | `/mini-apps/search/preview` | 실시간 검색 미리보기 | - |
 | GET | `/mini-apps/search/popular` | 인기 검색어 TOP 5 | - |
 | GET | `/mini-apps/category/{categoryId}` | 카테고리 필터 | - |
@@ -144,12 +116,18 @@ iOS 앱 POST /mini-apps/{id}/launch → CDN Signed URL → 번들 실행
 
 | Method | Path | 설명 | 권한 |
 |--------|------|------|------|
-| POST | `/reviews` | 심사 요청 제출 | PUBLISHER |
+| POST | `/reviews` | 심사 요청 | PUBLISHER |
 | GET | `/reviews/pending` | 대기 중 심사 목록 | ADMIN |
-| GET | `/reviews/{id}` | 심사 상세 조회 | ADMIN |
+| GET | `/reviews/{id}` | 심사 상세 | ADMIN |
 | GET | `/reviews/{id}/test-link` | 어드민용 테스트 링크 | ADMIN |
-| POST | `/reviews/{id}/decision` | 승인/반려 (reviewId 기준) | ADMIN |
-| POST | `/reviews/versions/{versionId}/decision` | 승인/반려 (versionId 기준) | ADMIN |
+| POST | `/reviews/versions/{versionId}/decision` | 승인 / 반려 | ADMIN |
+
+### 알림
+
+| Method | Path | 설명 | 권한 |
+|--------|------|------|------|
+| POST | `/api/v1/notifications/fcm/register` | FCM 토큰 등록 | USER |
+| GET | `/api/v1/notifications/inbox` | 알림 인박스 조회 | USER |
 
 ### 애널리틱스
 
@@ -157,7 +135,6 @@ iOS 앱 POST /mini-apps/{id}/launch → CDN Signed URL → 번들 실행
 |--------|------|------|------|
 | POST | `/api/v1/analytics/events` | 이벤트 배치 수집 | USER |
 | GET | `/api/v1/analytics/apps/{appId}/summary` | 앱 통계 요약 | PUBLISHER |
-| GET | `/api/v1/analytics/apps/{appId}/events` | 이벤트 목록 | PUBLISHER |
 
 ---
 
@@ -205,13 +182,15 @@ universal-link:
 
 mail:
   dev:
-    log-only: true   # 로컬에서 실제 메일 발송 없이 콘솔로 OTP 확인
+    log-only: true   # 로컬에서 실제 메일 없이 콘솔로 OTP 확인
 ```
 
 ### 2. Redis 실행
 
 ```bash
-brew services start redis
+brew services start redis       # macOS
+# 또는
+docker run -p 6379:6379 redis
 ```
 
 ### 3. 서버 실행
@@ -252,35 +231,12 @@ curl -X POST http://localhost:8080/api/dev/seed
 
 ---
 
-## 향후 개발 계획
-
-### 기능 보완
-
-| 항목 | 내용 |
-|------|------|
-| 심사 결과 푸시 알림 | 승인/반려 시 퍼블리셔에게 알림 발송 |
-| 워크스페이스 팀 초대 | 이메일 기반 멤버 초대 기능 |
-| 미니앱 버전 롤백 | 이전 배포 버전으로 즉시 롤백 |
-| 유저 앱 즐겨찾기 | 자주 쓰는 앱 북마크 |
-| 대학교별 앱 필터링 | 재학 대학 기반 앱 노출 필터 |
-
-### 운영 안정성
-
-| 항목 | 내용 |
-|------|------|
-| 어드민 운영 API 강화 | 유저/퍼블리셔 정지·복구, 앱 강제 내림 |
-| 모니터링 연동 | Sentry / Datadog 도입 |
-| 테스트 커버리지 | 서비스 레이어 단위 테스트 추가 |
-| Analytics 실시간화 | 폴링 → WebSocket / SSE 전환 |
-
----
-
 ## 브랜치 전략
 
 ```
-main         ← 프로덕션 배포 브랜치
-develop      ← 개발 통합 브랜치
-feature/*    ← 기능 개발 (develop 기준으로 분기, PR 후 merge)
+main         ← 프로덕션 배포
+develop      ← 개발 통합
+feature/*    ← 기능 개발 (PR → develop)
 ```
 
-> **주의:** `develop` 브랜치에 직접 push 금지. 반드시 feature 브랜치 → PR → merge 순서로 진행합니다.
+> `develop` 브랜치 직접 push 금지. 반드시 `feature/*` → PR → merge 순서로 진행합니다.
